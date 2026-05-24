@@ -285,7 +285,6 @@ p {
 	padding-block: clamp(4rem, 10vw, 8rem) clamp(3rem, 7vw, 5rem);
 }
 
-.hero__actions,
 .link-row {
 	display: flex;
 	flex-wrap: wrap;
@@ -331,12 +330,12 @@ p {
 }
 
 .scroll-showcase {
-	padding-block: clamp(2.5rem, 6vw, 5.5rem);
+	padding-block: clamp(0.75rem, 2vw, 1.5rem) clamp(1.5rem, 3vw, 2.5rem);
 }
 
 .showcase-stage {
 	position: relative;
-	height: calc(var(--showcase-count) * 100vh);
+	height: calc(100vh + ((var(--showcase-count) - 1) * 24vh));
 	min-height: 42rem;
 }
 
@@ -347,7 +346,7 @@ p {
 	grid-template-columns: minmax(0, 1.02fr) minmax(22rem, 0.68fr);
 	gap: clamp(1.5rem, 5vw, 4rem);
 	align-items: center;
-	min-height: calc(100vh - 112px);
+	min-height: 74vh;
 	overflow: hidden;
 }
 
@@ -357,14 +356,14 @@ p {
 
 .showcase-visual-stack {
 	position: relative;
-	min-height: clamp(28rem, 64vh, 43rem);
+	min-height: clamp(28rem, 72vh, 72rem);
 }
 
 .showcase-visual,
 .showcase-mobile-visual {
 	position: relative;
 	display: flex;
-	min-height: clamp(28rem, 64vh, 43rem);
+	min-height: clamp(28rem, 72vh, 72rem);
 	align-items: flex-end;
 	justify-content: flex-start;
 	overflow: hidden;
@@ -396,6 +395,20 @@ p {
 .showcase-visual--reveal {
 	clip-path: inset(0 100% 100% 0);
 	animation: visual-square-reveal 620ms linear both;
+}
+
+.showcase-stage[data-direction="up"] .showcase-visual--reveal {
+	clip-path: inset(0 0 0 0);
+	animation: none;
+}
+
+.showcase-stage[data-direction="up"] .showcase-visual--base {
+	z-index: 2;
+	animation: visual-square-shrink-up 620ms linear both;
+}
+
+.showcase-stage[data-direction="up"] .showcase-visual--active {
+	z-index: 1;
 }
 
 .showcase-visual > *,
@@ -456,9 +469,9 @@ p {
 }
 
 .showcase-visual__label {
-	max-width: 11ch;
-	overflow-wrap: anywhere;
-	font-size: clamp(2.6rem, 7vw, 5.8rem);
+	max-width: min(100%, 14ch);
+	overflow-wrap: break-word;
+	font-size: clamp(2.6rem, 4.8vw, 4.2rem);
 	font-weight: 820;
 	letter-spacing: 0;
 	line-height: 0.95;
@@ -466,35 +479,77 @@ p {
 
 .showcase-track {
 	position: relative;
-	height: min(68vh, 38rem);
+	--showcase-preview-height: clamp(14rem, 32vh, 16.5rem);
+	height: 78vh;
 	overflow: hidden;
-	border-block: 1px solid var(--color-border);
 }
 
 .showcase-track__inner {
-	display: grid;
-	height: calc(var(--showcase-count) * 100%);
-	transform: translateY(calc(var(--showcase-track-offset) + var(--showcase-wiggle-offset)));
-	transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1);
+	position: relative;
+	height: 100%;
 }
 
 .showcase-item {
+	position: absolute;
+	inset: 0;
 	display: flex;
-	min-height: 100%;
 	flex-direction: column;
 	justify-content: center;
 	padding-block: clamp(2rem, 5vw, 4rem);
-	opacity: 0.18;
 	pointer-events: none;
 	transition:
 		opacity 220ms ease,
 		transform 220ms ease;
 }
 
-.showcase-item[data-active="true"] {
+.showcase-item--active {
+	inset: 0 0 var(--showcase-preview-height);
 	opacity: 1;
 	pointer-events: auto;
-	transform: translateY(-0.2rem);
+	transform: translateY(0);
+	z-index: 2;
+}
+
+.showcase-item--entering {
+	animation: text-push-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.showcase-item--previous {
+	opacity: 0;
+	transform: translateY(-42%);
+	animation: text-push-out 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+	z-index: 1;
+}
+
+.showcase-stage[data-direction="up"] .showcase-item--entering {
+	animation-name: text-push-in-up;
+}
+
+.showcase-stage[data-direction="up"] .showcase-item--previous {
+	animation-name: text-push-out-up;
+}
+
+.showcase-item--preview {
+	inset: auto 0 0;
+	height: var(--showcase-preview-height);
+	min-height: 0;
+	justify-content: flex-start;
+	padding-block: clamp(0.55rem, 1.2vw, 0.85rem) 0;
+	opacity: 0.92;
+	transform: none;
+	z-index: 3;
+	mask-image: linear-gradient(to bottom, black 0%, rgba(0, 0, 0, 0.82) 68%, rgba(0, 0, 0, 0.08) 100%);
+	-webkit-mask-image: linear-gradient(to bottom, black 0%, rgba(0, 0, 0, 0.82) 68%, rgba(0, 0, 0, 0.08) 100%);
+}
+
+.showcase-item--preview .showcase-item__meta span {
+	margin-left: auto;
+	text-align: right;
+	font-size: clamp(2.15rem, 4vw, 3.25rem);
+}
+
+.showcase-item--preview .showcase-item__meta {
+	color: color-mix(in srgb, var(--color-muted) 86%, var(--color-text));
 }
 
 .showcase-item__meta {
@@ -519,6 +574,14 @@ p {
 	text-transform: uppercase;
 }
 
+.showcase-item.showcase-item--preview h3 {
+	margin-top: 0.55rem;
+	color: var(--color-accent-strong);
+	font-size: clamp(1.15rem, 1.7vw, 1.5rem);
+	line-height: 1.1;
+	text-transform: uppercase;
+}
+
 .showcase-item h3 a {
 	text-decoration: none;
 }
@@ -528,6 +591,14 @@ p {
 	color: var(--color-muted);
 	font-size: clamp(1.02rem, 1.3vw, 1.15rem);
 	line-height: 1.75;
+}
+
+.showcase-item.showcase-item--preview p {
+	display: block;
+	max-width: 25rem;
+	margin-top: 0.55rem;
+	font-size: clamp(0.96rem, 1.05vw, 1rem);
+	line-height: 1.55;
 }
 
 .showcase-mobile-visual {
@@ -697,6 +768,66 @@ p {
 	}
 }
 
+@keyframes visual-square-shrink-up {
+	from {
+		clip-path: inset(0 0 0 0);
+		filter: saturate(1) brightness(1);
+	}
+
+	to {
+		clip-path: inset(0 100% 100% 0);
+		filter: saturate(0.86) brightness(0.92);
+	}
+}
+
+@keyframes text-push-in {
+	from {
+		opacity: 0.42;
+		transform: translateY(42%);
+	}
+
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes text-push-out {
+	from {
+		opacity: 1;
+		transform: translateY(0);
+	}
+
+	to {
+		opacity: 0;
+		transform: translateY(-42%);
+	}
+}
+
+@keyframes text-push-in-up {
+	from {
+		opacity: 0.42;
+		transform: translateY(-42%);
+	}
+
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes text-push-out-up {
+	from {
+		opacity: 1;
+		transform: translateY(0);
+	}
+
+	to {
+		opacity: 0;
+		transform: translateY(42%);
+	}
+}
+
 @media (prefers-reduced-motion: reduce) {
 	html {
 		scroll-behavior: auto;
@@ -756,6 +887,7 @@ p {
 	}
 
 	.showcase-track__inner {
+		display: grid;
 		gap: 2.2rem;
 		height: auto;
 		transform: none;
@@ -763,12 +895,19 @@ p {
 	}
 
 	.showcase-item {
+		position: static;
 		min-height: auto;
 		opacity: 1;
 		pointer-events: auto;
 		transform: none;
 		border-top: 0;
 		padding-block: 0;
+		animation: none;
+	}
+
+	.showcase-item--previous,
+	.showcase-item--preview {
+		display: none;
 	}
 
 	.showcase-mobile-visual {

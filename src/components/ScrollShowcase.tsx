@@ -22,12 +22,13 @@ type Props = {
 export default function ScrollShowcase({ items, kicker, title, description }: Props) {
 	const [activeIndex, setActiveIndex] = useState(0);
 	const [previousIndex, setPreviousIndex] = useState(0);
-	const [trackOffset, setTrackOffset] = useState('0%');
-	const [wiggleOffset, setWiggleOffset] = useState('0px');
 	const [hasVisualTransition, setHasVisualTransition] = useState(false);
+	const [scrollDirection, setScrollDirection] = useState<'down' | 'up'>('down');
 	const stageRef = useRef<HTMLDivElement | null>(null);
 	const activeItem = items[activeIndex] ?? items[0];
 	const previousItem = items[previousIndex] ?? activeItem;
+	const previewIndex = activeIndex < items.length - 1 ? activeIndex + 1 : null;
+	const previewItem = previewIndex === null ? null : items[previewIndex];
 
 	useEffect(() => {
 		let animationFrame = 0;
@@ -41,20 +42,14 @@ export default function ScrollShowcase({ items, kicker, title, description }: Pr
 			const rect = stage.getBoundingClientRect();
 			const scrollableDistance = Math.max(stage.offsetHeight - window.innerHeight, 1);
 			const nextProgress = Math.min(Math.max(-rect.top / scrollableDistance, 0), 1);
-			const scaledPosition = nextProgress * items.length;
 			const nextIndex =
-				items.length <= 1 ? 0 : Math.min(items.length - 1, Math.floor(scaledPosition));
-			const itemSlot = 100 / items.length;
-			const scrollWithinItem = Math.min(Math.max(scaledPosition - nextIndex, 0), 1);
-			const nextOffset = -(nextIndex * itemSlot);
-			const nextWiggle = -Math.min(scrollWithinItem, 0.72) * 42;
+				items.length <= 1 ? 0 : Math.min(items.length - 1, Math.floor(nextProgress * items.length));
 
-			setTrackOffset(`${nextOffset}%`);
-			setWiggleOffset(`${nextWiggle}px`);
 			setActiveIndex((currentIndex) => {
 				if (currentIndex !== nextIndex) {
 					setPreviousIndex(currentIndex);
 					setHasVisualTransition(true);
+					setScrollDirection(nextIndex > currentIndex ? 'down' : 'up');
 				}
 
 				return nextIndex;
@@ -94,14 +89,13 @@ export default function ScrollShowcase({ items, kicker, title, description }: Pr
 
 				<div
 					className="showcase-stage"
+					data-direction={scrollDirection}
 					ref={stageRef}
 					style={
 						{
 							'--showcase-count': items.length,
 							'--showcase-active-index': activeIndex,
 							'--showcase-active-offset': `${-activeIndex * (100 / items.length)}%`,
-							'--showcase-track-offset': trackOffset,
-							'--showcase-wiggle-offset': wiggleOffset,
 						} as CSSProperties
 					}
 				>
@@ -141,46 +135,74 @@ export default function ScrollShowcase({ items, kicker, title, description }: Pr
 
 						<div className="showcase-track">
 							<div className="showcase-track__inner">
-								{items.map((item, index) => (
+								{previousIndex !== activeIndex && (
 									<article
-										className="showcase-item"
-										data-active={index === activeIndex}
-										data-showcase-index={index}
-										key={item.href}
-								>
-										<a
-											className={`showcase-mobile-visual showcase-visual--${item.visualTone}`}
-											href={item.href}
-											aria-label={`Open ${item.title}`}
-										>
-											<span className="showcase-visual__marker">
-												{String(index + 1).padStart(2, '0')}
-											</span>
-											<span className="showcase-visual__label">
-												{item.visualLabel ?? item.title}
-											</span>
-										</a>
-
+										className="showcase-item showcase-item--previous"
+										key={`previous-text-${previousItem.href}`}
+										aria-hidden="true"
+									>
 										<div className="showcase-item__meta">
-											<p className="eyebrow">{item.eyebrow}</p>
-											<span>{String(index + 1).padStart(2, '0')}</span>
+											<p className="eyebrow">{previousItem.eyebrow}</p>
+											<span>{String(previousIndex + 1).padStart(2, '0')}</span>
 										</div>
-										<h3>
-											<a href={item.href}>{item.title}</a>
-										</h3>
-										<p>{item.summary}</p>
-										<ul className="tag-list" aria-label={`${item.title} topics`}>
-											{item.tags.map((tag) => (
-												<li className="tag-list__item" key={tag}>
-													{tag}
-												</li>
-											))}
-										</ul>
-										<a className="text-link" href={item.href}>
-											Open {item.title}
-										</a>
+										<h3>{previousItem.title}</h3>
+										<p>{previousItem.summary}</p>
 									</article>
-								))}
+								)}
+
+								<article
+									className={`showcase-item showcase-item--active ${hasVisualTransition ? 'showcase-item--entering' : ''}`}
+									data-active="true"
+									data-showcase-index={activeIndex}
+									key={`active-text-${activeItem.href}`}
+								>
+									<a
+										className={`showcase-mobile-visual showcase-visual--${activeItem.visualTone}`}
+										href={activeItem.href}
+										aria-label={`Open ${activeItem.title}`}
+									>
+										<span className="showcase-visual__marker">
+											{String(activeIndex + 1).padStart(2, '0')}
+										</span>
+										<span className="showcase-visual__label">
+											{activeItem.visualLabel ?? activeItem.title}
+										</span>
+									</a>
+
+									<div className="showcase-item__meta">
+										<p className="eyebrow">{activeItem.eyebrow}</p>
+										<span>{String(activeIndex + 1).padStart(2, '0')}</span>
+									</div>
+									<h3>
+										<a href={activeItem.href}>{activeItem.title}</a>
+									</h3>
+									<p>{activeItem.summary}</p>
+									<ul className="tag-list" aria-label={`${activeItem.title} topics`}>
+										{activeItem.tags.map((tag) => (
+											<li className="tag-list__item" key={tag}>
+												{tag}
+											</li>
+										))}
+									</ul>
+									<a className="text-link" href={activeItem.href}>
+										Open {activeItem.title}
+									</a>
+								</article>
+
+								{previewItem && previewIndex !== null && (
+									<article
+										className="showcase-item showcase-item--preview"
+										key={`preview-text-${previewItem.href}`}
+										aria-hidden="true"
+								>
+										<div className="showcase-item__meta">
+											<p className="eyebrow">{previewItem.eyebrow}</p>
+											<span>{String(previewIndex + 1).padStart(2, '0')}</span>
+										</div>
+										<h3>{previewItem.title}</h3>
+										<p>{previewItem.summary}</p>
+									</article>
+								)}
 							</div>
 						</div>
 					</div>

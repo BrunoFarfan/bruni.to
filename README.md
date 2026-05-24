@@ -41,4 +41,4 @@ All commands are run from the root of the project, from a terminal:
 - `/lab/mike`
 - `/lab/future-experiments`
 - `/about`
-- `/contact`
+- `/contact` redirects to `/about`

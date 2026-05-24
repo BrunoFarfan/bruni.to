@@ -15,11 +15,5 @@ import { labProjects } from '../../data/projects';
 		description="A lighter section for projects that are exploratory, unfinished, or useful as technical sketches."
 	/>
 
-	<ScrollShowcase
-		client:load
-		items={labProjects}
-		kicker="Lab"
-		title="Experiments with room to stay unfinished."
-		description="Scroll through the lab entries. These pages are intentionally lighter and more exploratory than selected work."
-	/>
+	<ScrollShowcase client:load items={labProjects} />
 </Layout>

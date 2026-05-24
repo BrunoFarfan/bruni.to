@@ -1,6 +1,5 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import Section from '../components/Section.astro';
 import ScrollShowcase from '../components/ScrollShowcase';
 import { homeShowcaseItems } from '../data/projects';
 ---
@@ -17,50 +16,11 @@ import { homeShowcaseItems } from '../data/projects';
 				A personal portfolio for selected work, technical experiments, and notes across AI,
 				automation, document intelligence, and software engineering.
 			</p>
-			<div class="hero__actions" aria-label="Primary actions">
-				<a class="button button--primary" href="/work">View selected work</a>
-				<a class="button" href="/lab">Visit the lab</a>
-				<a class="button" href="/about">About</a>
-				<a class="button" href="/contact">Contact</a>
-			</div>
 		</div>
 	</section>
-
-	<Section
-		eyebrow="What I build"
-		title="Systems that turn messy inputs into useful workflows."
-		description="This scaffold frames Bruno's portfolio around practical AI automation, document-heavy software, and experiments that connect models with real products."
-	>
-		<div class="focus-list">
-			<article class="focus-item">
-				<h3>AI automation</h3>
-				<p class="prose">
-					Placeholder copy for automating reimbursement flows, operational review, and internal
-					tools with careful reliability boundaries.
-				</p>
-			</article>
-			<article class="focus-item">
-				<h3>Document intelligence</h3>
-				<p class="prose">
-					Placeholder copy for extracting structure from large document sets using NLP, embeddings,
-					scraping, and data pipelines.
-				</p>
-			</article>
-			<article class="focus-item">
-				<h3>Experimental tools</h3>
-				<p class="prose">
-					Placeholder copy for prototypes across prediction, robotics, computer vision, and AI-first
-					interfaces.
-				</p>
-			</article>
-		</div>
-	</Section>
 
 	<ScrollShowcase
 		client:load
 		items={homeShowcaseItems}
-		kicker="Portfolio map"
-		title="Two paths through the work."
-		description="Selected Work is the polished record. Lab is the place for experiments, prototypes, and notes."
 	/>
 </Layout>
