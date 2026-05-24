@@ -1,0 +1,52 @@
+---
+import PageHeader from '../../components/PageHeader.astro';
+import Section from '../../components/Section.astro';
+import Layout from '../../layouts/Layout.astro';
+import { labProjects } from '../../data/projects';
+
+const project = labProjects[0];
+---
+
+<Layout
+	title={project.title}
+	description="A placeholder lab page for OGAI, an experimental football prediction project using scraped Premier League data."
+>
+	<PageHeader
+		eyebrow="Lab"
+		title={project.title}
+		description="A placeholder lab note for a football prediction experiment built around scraped Premier League data."
+	/>
+
+	<Section compact>
+		<div class="detail-layout">
+			<article class="prose">
+				<h2>Experiment</h2>
+				<p>
+					OGAI is framed here as an exploratory project for collecting football data, shaping it into
+					model-ready datasets, and testing simple prediction workflows.
+				</p>
+				<p>
+					This scaffold leaves room for future notes on data sources, feature design, evaluation, and
+					what made the experiment useful or limited.
+				</p>
+			</article>
+
+			<aside class="panel detail-aside" aria-label="Project facts">
+				<dl class="fact-list">
+					<div>
+						<dt>Status</dt>
+						<dd>{project.status}</dd>
+					</div>
+					<div>
+						<dt>Focus</dt>
+						<dd>{project.focus}</dd>
+					</div>
+					<div>
+						<dt>Topics</dt>
+						<dd>{project.tags.join(', ')}</dd>
+					</div>
+				</dl>
+			</aside>
+		</div>
+	</Section>
+</Layout>

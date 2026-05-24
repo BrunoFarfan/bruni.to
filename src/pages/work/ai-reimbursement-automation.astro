@@ -1,0 +1,61 @@
+---
+import PageHeader from '../../components/PageHeader.astro';
+import Section from '../../components/Section.astro';
+import Layout from '../../layouts/Layout.astro';
+import { workProjects } from '../../data/projects';
+
+const project = workProjects[0];
+---
+
+<Layout
+	title={project.title}
+	description="A placeholder selected-work page for AI reimbursement automation, insurer portal workflows, and operational tooling."
+>
+	<PageHeader
+		eyebrow="Selected work"
+		title={project.title}
+		description="A professional placeholder case study for connecting chat intake, files, insurer portals, and internal operations into a structured reimbursement workflow."
+	/>
+
+	<Section compact>
+		<div class="detail-layout">
+			<article class="prose">
+				<h2>Overview</h2>
+				<p>
+					This page is a scaffold for a future case study about AI-assisted reimbursement automation.
+					The current copy should be treated as placeholder content that frames the type of work, not as
+					a final public write-up.
+				</p>
+				<p>
+					The story can focus on turning conversations and uploaded files into structured reimbursement
+					data, coordinating insurer portal interactions, and giving internal teams tools to monitor and
+					recover operational flows.
+				</p>
+
+				<h2>Direction</h2>
+				<p>
+					The future version should describe the system boundaries, the role of LangGraph-style
+					conversation flows, review surfaces, queue monitoring, failure handling, and gradual rollout
+					practices.
+				</p>
+			</article>
+
+			<aside class="panel detail-aside" aria-label="Project facts">
+				<dl class="fact-list">
+					<div>
+						<dt>Status</dt>
+						<dd>{project.status}</dd>
+					</div>
+					<div>
+						<dt>Focus</dt>
+						<dd>{project.focus}</dd>
+					</div>
+					<div>
+						<dt>Topics</dt>
+						<dd>{project.tags.join(', ')}</dd>
+					</div>
+				</dl>
+			</aside>
+		</div>
+	</Section>
+</Layout>

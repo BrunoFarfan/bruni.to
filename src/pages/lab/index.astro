@@ -1,0 +1,34 @@
+---
+import PageHeader from '../../components/PageHeader.astro';
+import ProjectCard from '../../components/ProjectCard.astro';
+import Section from '../../components/Section.astro';
+import Layout from '../../layouts/Layout.astro';
+import { labProjects } from '../../data/projects';
+---
+
+<Layout
+	title="Lab"
+	description="Experimental projects and notes across AI tooling, prediction, robotics, and software systems."
+>
+	<PageHeader
+		eyebrow="Lab"
+		title="Experiments, prototypes, and technical notes."
+		description="A lighter section for projects that are exploratory, unfinished, or useful as technical sketches."
+	/>
+
+	<Section compact>
+		<div class="grid grid--three">
+			{
+				labProjects.map((project) => (
+					<ProjectCard
+						title={project.title}
+						href={project.href}
+						eyebrow={project.eyebrow}
+						description={project.summary}
+						tags={project.tags}
+					/>
+				))
+			}
+		</div>
+	</Section>
+</Layout>

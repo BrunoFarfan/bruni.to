@@ -1,0 +1,63 @@
+---
+import PageHeader from '../components/PageHeader.astro';
+import Section from '../components/Section.astro';
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout
+	title="About"
+	description="Background, technical interests, and links for Bruno Farfan Miquel, a software and AI-oriented developer."
+>
+	<PageHeader
+		eyebrow="About"
+		title="A software engineer focused on practical AI systems."
+		description="Placeholder background copy for a portfolio centered on automation, document intelligence, software systems, and technical experiments."
+	/>
+
+	<Section title="Background" compact>
+		<div class="prose">
+			<p>
+				Bruno Farfan Miquel is a software and AI-oriented developer based in Santiago, Chile. This
+				portfolio scaffold is designed to grow into a focused record of professional systems,
+				experiments, and technical notes.
+			</p>
+			<p>
+				The background direction is informed by work in reimbursement automation, document
+				intelligence, NLP pipelines, scraping, internal tools, AI teaching, and computer vision
+				prototypes.
+			</p>
+		</div>
+	</Section>
+
+	<Section title="Technical interests" compact>
+		<div class="grid grid--three">
+			<div class="panel">
+				<h3>AI-assisted workflows</h3>
+				<p class="prose">
+					Interfaces and systems that use models to structure messy user inputs and support real
+					operations.
+				</p>
+			</div>
+			<div class="panel">
+				<h3>Document systems</h3>
+				<p class="prose">
+					Extraction, retrieval, summarization, and quality controls for large document collections.
+				</p>
+			</div>
+			<div class="panel">
+				<h3>Experimental tools</h3>
+				<p class="prose">
+					Small prototypes across robotics, prediction, computer vision, and developer-facing AI tools.
+				</p>
+			</div>
+		</div>
+	</Section>
+
+	<Section title="Links" compact>
+		<ul class="contact-list" aria-label="Profile links">
+			<li><a href="mailto:bruno.farfan.miquel@uc.cl">Email</a></li>
+			<li><a href="https://github.com/BrunoFarfan">GitHub</a></li>
+			<li><a href="https://www.linkedin.com/in/bruno-farfan-miquel">LinkedIn</a></li>
+		</ul>
+	</Section>
+</Layout>

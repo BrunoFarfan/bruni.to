@@ -1,0 +1,52 @@
+---
+import PageHeader from '../../components/PageHeader.astro';
+import Section from '../../components/Section.astro';
+import Layout from '../../layouts/Layout.astro';
+import { labProjects } from '../../data/projects';
+
+const project = labProjects[1];
+---
+
+<Layout
+	title={project.title}
+	description="A placeholder lab page for MIKE, a robotics prototype using Python computer vision and aiming logic."
+>
+	<PageHeader
+		eyebrow="Lab"
+		title={project.title}
+		description="A placeholder lab note for an intelligent table-tennis ball launcher using Python, computer vision, aiming, and device communication."
+	/>
+
+	<Section compact>
+		<div class="detail-layout">
+			<article class="prose">
+				<h2>Prototype</h2>
+				<p>
+					MIKE is framed here as a robotics prototype that connects perception, targeting, communication,
+					and actuation in a physical system.
+				</p>
+				<p>
+					This scaffold leaves room for future notes on the vision pipeline, calibration, aiming logic,
+					hardware constraints, and lessons from building a tool that has to work outside the browser.
+				</p>
+			</article>
+
+			<aside class="panel detail-aside" aria-label="Project facts">
+				<dl class="fact-list">
+					<div>
+						<dt>Status</dt>
+						<dd>{project.status}</dd>
+					</div>
+					<div>
+						<dt>Focus</dt>
+						<dd>{project.focus}</dd>
+					</div>
+					<div>
+						<dt>Topics</dt>
+						<dd>{project.tags.join(', ')}</dd>
+					</div>
+				</dl>
+			</aside>
+		</div>
+	</Section>
+</Layout>

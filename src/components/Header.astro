@@ -1,0 +1,40 @@
+---
+import ThemeToggle from './ThemeToggle';
+
+const navItems = [
+	{ href: '/', label: 'Home' },
+	{ href: '/work', label: 'Work' },
+	{ href: '/lab', label: 'Lab' },
+	{ href: '/about', label: 'About' },
+	{ href: '/#contact', label: 'Contact' },
+];
+
+const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
+
+function isActive(href: string) {
+	if (href.includes('#')) {
+		return false;
+	}
+
+	return href === '/' ? currentPath === '/' : currentPath === href || currentPath.startsWith(`${href}/`);
+}
+---
+
+<header class="site-header">
+	<div class="container site-header__inner">
+		<a class="site-brand" href="/" aria-label="Bruno Farfan Miquel home">
+			<span class="site-brand__name">Bruno Farfan Miquel</span>
+			<span class="site-brand__role">Software and AI systems</span>
+		</a>
+		<nav class="site-nav" aria-label="Primary navigation">
+			{
+				navItems.map((item) => (
+					<a class="site-nav__link" href={item.href} aria-current={isActive(item.href) ? 'page' : undefined}>
+						{item.label}
+					</a>
+				))
+			}
+			<ThemeToggle client:load />
+		</nav>
+	</div>
+</header>
