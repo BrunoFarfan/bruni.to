@@ -34,8 +34,8 @@ All commands are run from the root of the project, from a terminal:
 
 - `/`
 - `/work`
-- `/work/ai-reimbursement-automation`
-- `/work/document-intelligence-pipelines`
+- `/work/skip`
+- `/work/unholster-ds`
 - `/lab`
 - `/lab/ogai`
 - `/lab/mike`

@@ -4,7 +4,12 @@ import Section from '../../components/Section.astro';
 import Layout from '../../layouts/Layout.astro';
 import { workProjects } from '../../data/projects';
 
-const project = workProjects[0];
+const projectTitle = "Skip";
+
+const project = workProjects.find((project) => project.title === projectTitle);
+if (!project) {
+	throw new Error(`Project ${projectTitle} not found`);
+}
 ---
 
 <Layout
@@ -15,6 +20,8 @@ const project = workProjects[0];
 		eyebrow="Selected work"
 		title={project.title}
 		description="A professional placeholder case study for connecting chat intake, files, insurer portals, and internal operations into a structured reimbursement workflow."
+		externalUrl="https://getskip.ai"
+		externalLabel="Open Skip in a new tab"
 	/>
 
 	<Section compact>

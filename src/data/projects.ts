@@ -12,20 +12,20 @@ export type Project = {
 
 export const workProjects: Project[] = [
   {
-    title: "AI reimbursement automation",
-    href: "/work/ai-reimbursement-automation",
+    title: "Skip",
+    href: "/work/skip",
     eyebrow: "Selected work",
     summary:
-      "A placeholder case study for insurer portal automation, WhatsApp intake, reimbursement structuring, and operational tooling.",
+      "Joined as a software engineer focused primarily on backend development, including scrapers, AI agent workflows, and document management systems. Subsequently assumed the role of de facto CTO, overseeing all aspects from infrastructure to product management.",
     tags: ["AI automation", "LangGraph", "Operations"],
     status: "Professional system",
     focus: "Automation across insurance workflows and internal tools",
     visualTone: "blue",
-    visualLabel: "AI reimbursement",
+    visualLabel: "Skip",
   },
   {
-    title: "Document intelligence pipelines",
-    href: "/work/document-intelligence-pipelines",
+    title: "Unholster",
+    href: "/work/unholster-ds",
     eyebrow: "Selected work",
     summary:
       "A placeholder case study for extracting structure from large document collections with NLP, embeddings, and custom scraping.",
@@ -33,29 +33,17 @@ export const workProjects: Project[] = [
     status: "Professional system",
     focus: "Large-scale document processing and entity extraction",
     visualTone: "violet",
-    visualLabel: "Document intelligence",
+    visualLabel: "Unholster",
   },
 ];
 
 export const labProjects: Project[] = [
   {
-    title: "OGAI",
-    href: "/lab/ogai",
-    eyebrow: "Lab",
-    summary:
-      "An experimental football prediction project using scraped Premier League data and lightweight modeling workflows.",
-    tags: ["Data scraping", "Prediction", "Sports data"],
-    status: "Experiment",
-    focus: "Data collection and prediction workflows",
-    visualTone: "green",
-    visualLabel: "OGAI",
-  },
-  {
     title: "MIKE",
     href: "/lab/mike",
     eyebrow: "Lab",
     summary:
-      "A robotics experiment for intelligently launching table-tennis balls using Python, vision, aiming, and device communication.",
+      "A university robotics project for autonomously and intelligently launching table-tennis balls using Python, vision, aiming, and device communication.",
     tags: ["Python", "Computer vision", "Robotics"],
     status: "Prototype",
     focus: "Computer vision and physical interaction",
@@ -63,16 +51,16 @@ export const labProjects: Project[] = [
     visualLabel: "MIKE",
   },
   {
-    title: "Future experiments",
-    href: "/lab/future-experiments",
-    eyebrow: "Lab notes",
+    title: "OGAI",
+    href: "/lab/ogai",
+    eyebrow: "Lab",
     summary:
-      "A placeholder space for future AI tooling notes, prototypes, and small technical explorations.",
-    tags: ["Notes", "Tooling", "Prototypes"],
-    status: "Open-ended",
-    focus: "Early ideas and technical sketches",
-    visualTone: "slate",
-    visualLabel: "Future experiments",
+      "An experimental football prediction project using scraped Premier League data and lightweight neural network models.",
+    tags: ["Data scraping", "Prediction", "Sports data", "Neural networks"],
+    status: "Experiment",
+    focus: "Data collection and prediction workflows",
+    visualTone: "green",
+    visualLabel: "OGAI",
   },
 ];
 

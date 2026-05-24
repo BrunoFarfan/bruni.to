@@ -4,17 +4,24 @@ import Section from '../../components/Section.astro';
 import Layout from '../../layouts/Layout.astro';
 import { labProjects } from '../../data/projects';
 
-const project = labProjects[1];
+const projectTitle = "MIKE";
+
+const project = labProjects.find((project) => project.title === projectTitle);
+if (!project) {
+	throw new Error(`Project ${projectTitle} not found`);
+}
 ---
 
 <Layout
 	title={project.title}
-	description="A placeholder lab page for MIKE, a robotics prototype using Python computer vision and aiming logic."
+	description="A fully functional prototype for autonomously and intelligently launching table-tennis balls using Python, vision, aiming, and device communication."
 >
 	<PageHeader
 		eyebrow="Lab"
 		title={project.title}
-		description="A placeholder lab note for an intelligent table-tennis ball launcher using Python, computer vision, aiming, and device communication."
+		description="A fully functional prototype for autonomously and intelligently launching table-tennis balls using Python, vision, aiming, and device communication."
+		externalUrl="https://github.com/brunofarfan/tabletennis"
+		externalLabel="Open MIKE on GitHub in a new tab"
 	/>
 
 	<Section compact>
@@ -22,12 +29,18 @@ const project = labProjects[1];
 			<article class="prose">
 				<h2>Prototype</h2>
 				<p>
-					MIKE is framed here as a robotics prototype that connects perception, targeting, communication,
-					and actuation in a physical system.
+					MIKE (Máquina Inteligente de Kinetización de Esféricos) was a university robotics capstone project for the Robotics Major at Pontificia Universidad Católica de Chile.
 				</p>
 				<p>
-					This scaffold leaves room for future notes on the vision pipeline, calibration, aiming logic,
-					hardware constraints, and lessons from building a tool that has to work outside the browser.
+					The goal was to create a machine that could autonomously launch table-tennis balls with high accuracy and precision, allowing players to practice and improve their skills independently.
+				</p>
+				<p>
+					The robot used an Arduino to control the motors, a camera to detect the opponent's racket position, and a wired connection to a computer for processing.
+					The body was constructed from wood and 3D-printed parts.
+				</p>
+				<p>
+					MIKE could aim and launch balls at different points on the table based on the opponent's racket position.
+					By controlling the relative speed of three motors, it could apply vertical and horizontal spin, making the ball curve and dip.
 				</p>
 			</article>
 
