@@ -56,6 +56,8 @@ export default function ScrollShowcase({
 
   useEffect(() => {
     let animationFrame = 0;
+    let isTrackingScroll = false;
+    const mobileQuery = window.matchMedia("(max-width: 900px)");
 
     function updateFromScroll() {
       const stage = stageRef.current;
@@ -93,14 +95,48 @@ export default function ScrollShowcase({
       animationFrame = window.requestAnimationFrame(updateFromScroll);
     }
 
-    updateFromScroll();
-    window.addEventListener("scroll", scheduleUpdate, { passive: true });
-    window.addEventListener("resize", scheduleUpdate);
+    function startScrollTracking() {
+      if (isTrackingScroll) {
+        return;
+      }
+
+      isTrackingScroll = true;
+      updateFromScroll();
+      window.addEventListener("scroll", scheduleUpdate, { passive: true });
+      window.addEventListener("resize", scheduleUpdate);
+    }
+
+    function stopScrollTracking({ reset = false } = {}) {
+      if (isTrackingScroll) {
+        window.cancelAnimationFrame(animationFrame);
+        window.removeEventListener("scroll", scheduleUpdate);
+        window.removeEventListener("resize", scheduleUpdate);
+        isTrackingScroll = false;
+      }
+
+      if (reset) {
+        setActiveIndex(0);
+        setPreviousIndex(0);
+        setHasVisualTransition(false);
+        setScrollDirection("down");
+      }
+    }
+
+    function updateTrackingMode() {
+      if (mobileQuery.matches) {
+        stopScrollTracking({ reset: true });
+        return;
+      }
+
+      startScrollTracking();
+    }
+
+    updateTrackingMode();
+    mobileQuery.addEventListener("change", updateTrackingMode);
 
     return () => {
-      window.cancelAnimationFrame(animationFrame);
-      window.removeEventListener("scroll", scheduleUpdate);
-      window.removeEventListener("resize", scheduleUpdate);
+      mobileQuery.removeEventListener("change", updateTrackingMode);
+      stopScrollTracking();
     };
   }, [items.length]);
 
@@ -131,6 +167,51 @@ export default function ScrollShowcase({
             } as CSSProperties
           }
         >
+          <div
+            className="showcase-mobile-carousel"
+            aria-label={`${title ?? "Showcase"} projects`}
+          >
+            {items.map((item, index) => (
+              <article
+                className="showcase-mobile-card"
+                data-showcase-index={index}
+                key={item.href}
+              >
+                <a
+                  className={`showcase-mobile-visual showcase-visual--${item.visualTone}`}
+                  href={item.href}
+                  aria-label={`Open ${item.title}`}
+                >
+                  <span className="showcase-visual__marker">
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
+                  <span className="showcase-visual__label">
+                    {item.visualLabel ?? item.title}
+                  </span>
+                </a>
+
+                <div className="showcase-item__meta">
+                  <p className="eyebrow">{item.eyebrow}</p>
+                  <span>{String(index + 1).padStart(2, "0")}</span>
+                </div>
+                <h3>
+                  <a href={item.href}>{item.title}</a>
+                </h3>
+                <p>{item.summary}</p>
+                <ul className="tag-list" aria-label={`${item.title} topics`}>
+                  {item.tags.map((tag) => (
+                    <li className="tag-list__item" key={tag}>
+                      {tag}
+                    </li>
+                  ))}
+                </ul>
+                <a className="text-link" href={item.href}>
+                  Open {item.title}
+                </a>
+              </article>
+            ))}
+          </div>
+
           <div className="showcase-grid">
             <div className="showcase-visual-wrap" aria-hidden="true">
               <div className="showcase-visual-stack">

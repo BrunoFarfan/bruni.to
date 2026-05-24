@@ -19,11 +19,22 @@ function readPreferredTheme(): Theme {
 
 export default function ThemeToggle() {
   const [theme, setTheme] = useState<Theme>("light");
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     const preferredTheme = readPreferredTheme();
+    let animationFrame = 0;
+
     setTheme(preferredTheme);
     document.documentElement.dataset.theme = preferredTheme;
+
+    animationFrame = window.requestAnimationFrame(() => {
+      setIsReady(true);
+    });
+
+    return () => {
+      window.cancelAnimationFrame(animationFrame);
+    };
   }, []);
 
   function toggleTheme() {
@@ -42,6 +53,7 @@ export default function ThemeToggle() {
       onClick={toggleTheme}
       aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
       data-theme={theme}
+      data-ready={isReady ? "true" : undefined}
     >
       <span className="theme-toggle__track" aria-hidden="true">
         <span className="theme-toggle__icon theme-toggle__icon--sun">
