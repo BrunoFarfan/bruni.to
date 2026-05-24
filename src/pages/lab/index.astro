@@ -1,7 +1,6 @@
 ---
 import PageHeader from '../../components/PageHeader.astro';
-import ProjectCard from '../../components/ProjectCard.astro';
-import Section from '../../components/Section.astro';
+import ScrollShowcase from '../../components/ScrollShowcase';
 import Layout from '../../layouts/Layout.astro';
 import { labProjects } from '../../data/projects';
 ---
@@ -16,19 +15,11 @@ import { labProjects } from '../../data/projects';
 		description="A lighter section for projects that are exploratory, unfinished, or useful as technical sketches."
 	/>
 
-	<Section compact>
-		<div class="grid grid--three">
-			{
-				labProjects.map((project) => (
-					<ProjectCard
-						title={project.title}
-						href={project.href}
-						eyebrow={project.eyebrow}
-						description={project.summary}
-						tags={project.tags}
-					/>
-				))
-			}
-		</div>
-	</Section>
+	<ScrollShowcase
+		client:load
+		items={labProjects}
+		kicker="Lab"
+		title="Experiments with room to stay unfinished."
+		description="Scroll through the lab entries. These pages are intentionally lighter and more exploratory than selected work."
+	/>
 </Layout>

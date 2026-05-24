@@ -1,0 +1,51 @@
+---
+import PageHeader from '../components/PageHeader.astro';
+import Section from '../components/Section.astro';
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout
+	title="Contact"
+	description="Contact details for Bruno Farfan Miquel, including email, GitHub, LinkedIn, and location."
+>
+	<PageHeader
+		eyebrow="Contact"
+		title="Open to thoughtful software and AI systems conversations."
+		description="Reach out for professional inquiries, collaboration, or context around the work and experiments in this portfolio."
+	/>
+
+	<Section compact>
+		<div class="contact-layout">
+			<p class="contact-note">
+				Based in Santiago, Chile. Best fit for conversations around AI automation, document-heavy
+				software, internal tools, and experimental AI interfaces.
+			</p>
+			<ul class="contact-list" aria-label="Contact links">
+				<li>
+					<a href="mailto:bruno.farfan.miquel@uc.cl">
+						<span>Email</span>
+						<strong>bruno.farfan.miquel@uc.cl</strong>
+					</a>
+				</li>
+				<li>
+					<a href="https://github.com/BrunoFarfan">
+						<span>GitHub</span>
+						<strong>github.com/BrunoFarfan</strong>
+					</a>
+				</li>
+				<li>
+					<a href="https://www.linkedin.com/in/bruno-farfan-miquel">
+						<span>LinkedIn</span>
+						<strong>linkedin.com/in/bruno-farfan-miquel</strong>
+					</a>
+				</li>
+				<li>
+					<div class="contact-list__item">
+						<span>Location</span>
+						<strong>Santiago, Chile</strong>
+					</div>
+				</li>
+			</ul>
+		</div>
+	</Section>
+</Layout>

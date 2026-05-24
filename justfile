@@ -18,8 +18,6 @@ preview:
 lint:
 	pnpm astro check
 
-check: lint
-
 info:
 	pnpm astro info
 

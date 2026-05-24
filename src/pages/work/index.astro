@@ -1,7 +1,6 @@
 ---
 import PageHeader from '../../components/PageHeader.astro';
-import ProjectCard from '../../components/ProjectCard.astro';
-import Section from '../../components/Section.astro';
+import ScrollShowcase from '../../components/ScrollShowcase';
 import Layout from '../../layouts/Layout.astro';
 import { workProjects } from '../../data/projects';
 ---
@@ -16,19 +15,11 @@ import { workProjects } from '../../data/projects';
 		description="Polished placeholder case studies for production-oriented work in AI automation, document intelligence, and operational tooling."
 	/>
 
-	<Section compact>
-		<div class="grid grid--two">
-			{
-				workProjects.map((project) => (
-					<ProjectCard
-						title={project.title}
-						href={project.href}
-						eyebrow={project.eyebrow}
-						description={project.summary}
-						tags={project.tags}
-					/>
-				))
-			}
-		</div>
-	</Section>
+	<ScrollShowcase
+		client:load
+		items={workProjects}
+		kicker="Selected work"
+		title="Case-study placeholders for applied AI systems."
+		description="Scroll through the current work entries. Each item links to a detail page that can grow into a full case study."
+	/>
 </Layout>

@@ -6,6 +6,8 @@ export type Project = {
 	tags: string[];
 	status: string;
 	focus: string;
+	visualTone: string;
+	visualLabel?: string;
 };
 
 export const workProjects: Project[] = [
@@ -18,6 +20,8 @@ export const workProjects: Project[] = [
 		tags: ['AI automation', 'LangGraph', 'Operations'],
 		status: 'Professional system',
 		focus: 'Automation across insurance workflows and internal tools',
+		visualTone: 'blue',
+		visualLabel: 'AI reimbursement',
 	},
 	{
 		title: 'Document intelligence pipelines',
@@ -28,6 +32,8 @@ export const workProjects: Project[] = [
 		tags: ['NLP', 'Embeddings', 'Scraping'],
 		status: 'Professional system',
 		focus: 'Large-scale document processing and entity extraction',
+		visualTone: 'violet',
+		visualLabel: 'Document intelligence',
 	},
 ];
 
@@ -41,6 +47,8 @@ export const labProjects: Project[] = [
 		tags: ['Data scraping', 'Prediction', 'Sports data'],
 		status: 'Experiment',
 		focus: 'Data collection and prediction workflows',
+		visualTone: 'green',
+		visualLabel: 'OGAI',
 	},
 	{
 		title: 'MIKE',
@@ -51,6 +59,8 @@ export const labProjects: Project[] = [
 		tags: ['Python', 'Computer vision', 'Robotics'],
 		status: 'Prototype',
 		focus: 'Computer vision and physical interaction',
+		visualTone: 'amber',
+		visualLabel: 'MIKE',
 	},
 	{
 		title: 'Future experiments',
@@ -61,5 +71,34 @@ export const labProjects: Project[] = [
 		tags: ['Notes', 'Tooling', 'Prototypes'],
 		status: 'Open-ended',
 		focus: 'Early ideas and technical sketches',
+		visualTone: 'slate',
+		visualLabel: 'Future experiments',
+	},
+];
+
+export const homeShowcaseItems: Project[] = [
+	{
+		title: 'Selected Work',
+		href: '/work',
+		eyebrow: 'Professional systems',
+		summary:
+			'Polished case-study placeholders for AI automation, reimbursement workflows, document intelligence, and internal software systems.',
+		tags: ['AI automation', 'Document intelligence', 'Software systems'],
+		status: 'Portfolio category',
+		focus: 'Production-oriented work and applied AI systems',
+		visualTone: 'blue',
+		visualLabel: 'Selected Work',
+	},
+	{
+		title: 'Lab',
+		href: '/lab',
+		eyebrow: 'Experimental work',
+		summary:
+			'Exploratory prototypes, notes, and technical sketches across prediction, robotics, AI tooling, and model-driven interfaces.',
+		tags: ['Experiments', 'Prototypes', 'Technical notes'],
+		status: 'Portfolio category',
+		focus: 'Early-stage ideas and experimental tools',
+		visualTone: 'green',
+		visualLabel: 'Lab',
 	},
 ];
