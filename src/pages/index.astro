@@ -1,26 +1,22 @@
 ---
-import Layout from '../layouts/Layout.astro';
-import ScrollShowcase from '../components/ScrollShowcase';
-import { homeShowcaseItems } from '../data/projects';
+import Layout from "../layouts/Layout.astro";
+import ScrollShowcase from "../components/ScrollShowcase";
+import { homeShowcaseItems } from "../data/projects";
 ---
 
 <Layout
-	title="Bruno Farfan Miquel"
-	description="A personal portfolio for selected work, technical experiments, and notes across AI, automation, document intelligence, and software engineering."
+    title="Bruno Farfan Miquel"
+    description="A personal portfolio for selected work, technical experiments, and notes across AI, automation, document intelligence, and software engineering."
 >
-	<section class="hero">
-		<div class="container">
-			<p class="eyebrow">Software engineer and AI systems builder</p>
-			<h1>Building AI-assisted software systems and experimental tools.</h1>
-			<p class="lead">
-				A personal portfolio for selected work, technical experiments, and notes across AI,
-				automation, document intelligence, and software engineering.
-			</p>
-		</div>
-	</section>
+    <section class="hero">
+        <div class="container">
+            <h1>Turning ideas into impactful digital products</h1>
+            <p class="lead">
+                This portfolio features selected work and smaller projects I've
+                built.
+            </p>
+        </div>
+    </section>
 
-	<ScrollShowcase
-		client:load
-		items={homeShowcaseItems}
-	/>
+    <ScrollShowcase client:load items={homeShowcaseItems} />
 </Layout>

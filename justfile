@@ -16,6 +16,7 @@ preview:
 	pnpm preview
 
 lint:
+	pnpm exec prettier --write .
 	pnpm astro check
 
 info:

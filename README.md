@@ -22,13 +22,13 @@ The site is mostly static and uses Astro pages for routing. React is included on
 
 All commands are run from the root of the project, from a terminal:
 
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `pnpm install`             | Installs dependencies                            |
-| `pnpm dev`                 | Starts local dev server at `localhost:4321`      |
-| `pnpm build`               | Builds the production site to `./dist/`          |
-| `pnpm preview`             | Previews the production build locally            |
-| `pnpm astro ...`           | Runs Astro CLI commands                          |
+| Command          | Action                                      |
+| :--------------- | :------------------------------------------ |
+| `pnpm install`   | Installs dependencies                       |
+| `pnpm dev`       | Starts local dev server at `localhost:4321` |
+| `pnpm build`     | Builds the production site to `./dist/`     |
+| `pnpm preview`   | Previews the production build locally       |
+| `pnpm astro ...` | Runs Astro CLI commands                     |
 
 ## Routes
 
