@@ -7,10 +7,16 @@ interface Props {
 	title: string;
 	description: string;
 	canonicalPath?: string;
+	showHeader?: boolean;
 }
 
 const siteName = 'Bruno Farfan Miquel';
-const { title, description, canonicalPath = Astro.url.pathname } = Astro.props;
+const {
+	title,
+	description,
+	canonicalPath = Astro.url.pathname,
+	showHeader = true,
+} = Astro.props;
 const pageTitle = title === siteName ? title : `${title} | ${siteName}`;
 const canonicalUrl = new URL(canonicalPath, Astro.site ?? Astro.url.origin).toString();
 const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
@@ -58,7 +64,7 @@ const backLink = backLinks[currentPath];
 	<body>
 		<a class="skip-link" href="#main">Skip to content</a>
 		<div class="site-shell">
-			<Header />
+			{showHeader && <Header />}
 			<main id="main" class="site-main">
 				{
 					backLink && (

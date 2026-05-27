@@ -1,21 +1,137 @@
 ---
 import Layout from "../layouts/Layout.astro";
-import ScrollShowcase from "../components/ScrollShowcase";
-import { homeShowcaseItems } from "../data/projects";
+import ParticleTitle from "../components/ParticleTitle";
+import { labProjects, workProjects } from "../data/projects";
 ---
 
 <Layout
     title="Bruno Farfan Miquel"
     description="A personal portfolio for selected work, technical experiments, and notes across AI, automation, document intelligence, and software engineering."
+    showHeader={false}
 >
-    <section class="hero">
-        <div class="container">
-            <h1>From notebook experiments to systems people rely on</h1>
-            <p class="lead">
-                I'm Bruno, a builder who moves between data science experimentation and production software engineering. This portfolio collects professional work and personal experiments that reflect that range: from notebooks to systems in production.
+    <script is:inline>
+        try {
+            document.documentElement.dataset.homeReveal = window.matchMedia(
+                "(prefers-reduced-motion: reduce)",
+            ).matches
+                ? "ready"
+                : "intro";
+        } catch {
+            document.documentElement.dataset.homeReveal = "ready";
+        }
+    </script>
+
+    <section class="home-hero" aria-labelledby="home-title">
+        <div class="container home-hero__inner">
+            <p class="home-hero__kicker">Bruno Farfan Miquel</p>
+            <ParticleTitle
+                client:load
+                introText="bruni.to"
+                heroText="From experiments to systems"
+                titleId="home-title"
+            />
+            <p class="home-hero__lead">
+                I move between data science experimentation and production software engineering, building AI automation, scraping systems, document workflows, and practical tools that survive contact with real users.
             </p>
+            <div class="home-hero__links" aria-label="Primary links">
+                <a href="mailto:bruno.farfan.miquel@uc.cl">Email</a>
+                <a href="https://github.com/BrunoFarfan">GitHub</a>
+                <a href="https://www.linkedin.com/in/bruno-farfan-miquel"
+                    >LinkedIn</a
+                >
+            </div>
         </div>
     </section>
 
-    <ScrollShowcase client:load items={homeShowcaseItems} />
+    <div class="home-content">
+        <section class="home-index-section" aria-labelledby="work-title">
+            <div class="container">
+                <div class="home-section-heading">
+                    <p class="eyebrow">Selected work</p>
+                    <h2 id="work-title">Work</h2>
+                </div>
+
+                <div class="home-project-list">
+                    {
+                        workProjects.map((project, index) => (
+                            <article class="home-project">
+                                <a
+                                    class="home-project__main"
+                                    href={project.href}
+                                >
+                                    <span class="home-project__number">
+                                        {String(index + 1).padStart(2, "0")}
+                                    </span>
+                                    <span class="home-project__content">
+                                        <span class="home-project__meta">
+                                            {project.status}
+                                        </span>
+                                        <span class="home-project__title">
+                                            {project.title}
+                                        </span>
+                                        <span class="home-project__summary">
+                                            {project.summary}
+                                        </span>
+                                    </span>
+                                </a>
+                                <ul
+                                    class="tag-list home-project__tags"
+                                    aria-label={`${project.title} topics`}
+                                >
+                                    {project.tags.map((tag) => (
+                                        <li class="tag-list__item">{tag}</li>
+                                    ))}
+                                </ul>
+                            </article>
+                        ))
+                    }
+                </div>
+            </div>
+        </section>
+
+        <section class="home-index-section" aria-labelledby="lab-title">
+            <div class="container">
+                <div class="home-section-heading">
+                    <p class="eyebrow">Lab</p>
+                    <h2 id="lab-title">Experiments</h2>
+                </div>
+
+                <div class="home-project-list">
+                    {
+                        labProjects.map((project, index) => (
+                            <article class="home-project">
+                                <a
+                                    class="home-project__main"
+                                    href={project.href}
+                                >
+                                    <span class="home-project__number">
+                                        {String(index + 1).padStart(2, "0")}
+                                    </span>
+                                    <span class="home-project__content">
+                                        <span class="home-project__meta">
+                                            {project.status}
+                                        </span>
+                                        <span class="home-project__title">
+                                            {project.title}
+                                        </span>
+                                        <span class="home-project__summary">
+                                            {project.summary}
+                                        </span>
+                                    </span>
+                                </a>
+                                <ul
+                                    class="tag-list home-project__tags"
+                                    aria-label={`${project.title} topics`}
+                                >
+                                    {project.tags.map((tag) => (
+                                        <li class="tag-list__item">{tag}</li>
+                                    ))}
+                                </ul>
+                            </article>
+                        ))
+                    }
+                </div>
+            </div>
+        </section>
+    </div>
 </Layout>
