@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { createElement, useEffect, useRef, useState } from "react";
 
 type Props = {
   introText: string;
@@ -22,11 +22,30 @@ type MotionState =
   | "forming-domain"
   | "domain-settled"
   | "forming-hero"
-  | "hero-settled";
+  | "page-ready";
+
+type TextVariant = "domain" | "hero" | "section";
+
+type TextTargetOptions = {
+  align?: CanvasTextAlign;
+  fontSize?: number;
+  fontWeight?: string;
+  lineHeight?: number;
+  variant: TextVariant;
+};
+
+type PageTitleTarget = {
+  element: HTMLElement;
+  id: string;
+  text: string;
+  variant: "hero" | "section";
+};
 
 const SETTLE_DISTANCE = 0.75;
 const SETTLE_SPEED = 0.08;
 const POST_DOMAIN_INPUT_DELAY = 350;
+const FONT_FAMILY =
+  'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
 
 function getParticleCount(width: number) {
   if (width < 520) {
@@ -116,38 +135,28 @@ function getLines(
   return lines;
 }
 
-function getTextTargets(
+function getAutoFontSize(
+  context: CanvasRenderingContext2D,
   text: string,
   width: number,
   height: number,
-  desiredCount: number,
-  variant: "domain" | "hero",
+  variant: TextVariant,
 ) {
-  const canvas = document.createElement("canvas");
-  const context = canvas.getContext("2d", { willReadFrequently: true });
-
-  if (!context) {
-    return [];
-  }
-
-  canvas.width = Math.max(1, Math.floor(width));
-  canvas.height = Math.max(1, Math.floor(height));
-
-  const maxTextWidth = width * (variant === "domain" ? 0.84 : 0.88);
-  const maxTextHeight = height * (variant === "domain" ? 0.5 : 0.66);
+  const maxTextWidth =
+    width * (variant === "domain" ? 0.84 : variant === "hero" ? 0.88 : 1);
+  const maxTextHeight =
+    height * (variant === "domain" ? 0.5 : variant === "hero" ? 0.66 : 1);
   const maxFontSize = Math.min(
-    variant === "domain" ? 178 : 118,
-    width / (variant === "domain" ? 3.6 : 6.4),
-    height * (variant === "domain" ? 0.38 : 0.24),
+    variant === "domain" ? 178 : variant === "hero" ? 118 : 112,
+    width / (variant === "domain" ? 3.6 : variant === "hero" ? 6.4 : 5.4),
+    height * (variant === "domain" ? 0.38 : variant === "hero" ? 0.24 : 0.86),
   );
   const minFontSize = variant === "domain" ? 52 : 34;
   let fontSize = maxFontSize;
   let lines: string[] = [text];
-  const fontFamily =
-    'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
 
   while (fontSize > minFontSize) {
-    context.font = `780 ${fontSize}px ${fontFamily}`;
+    context.font = `780 ${fontSize}px ${FONT_FAMILY}`;
     lines = getLines(context, text, maxTextWidth);
 
     const widestLine = Math.max(
@@ -162,17 +171,61 @@ function getTextTargets(
     fontSize -= 2;
   }
 
+  return { fontSize, lines };
+}
+
+function getTextTargets(
+  text: string,
+  width: number,
+  height: number,
+  desiredCount: number,
+  options: TextTargetOptions,
+) {
+  const canvas = document.createElement("canvas");
+  const context = canvas.getContext("2d", { willReadFrequently: true });
+
+  if (!context) {
+    return [];
+  }
+
+  canvas.width = Math.max(1, Math.ceil(width));
+  canvas.height = Math.max(1, Math.ceil(height));
+
+  const fontWeight = options.fontWeight ?? "780";
+  const presetFontSize = options.fontSize;
+  const autoText = presetFontSize
+    ? (() => {
+        context.font = `${fontWeight} ${presetFontSize}px ${FONT_FAMILY}`;
+        return {
+          fontSize: presetFontSize,
+          lines: getLines(context, text, width),
+        };
+      })()
+    : getAutoFontSize(context, text, width, height, options.variant);
+  const fontSize = autoText.fontSize;
+  const lineHeight = options.lineHeight ?? fontSize * 0.98;
+  const lines = autoText.lines;
+
   context.clearRect(0, 0, canvas.width, canvas.height);
   context.fillStyle = "#000";
-  context.font = `780 ${fontSize}px ${fontFamily}`;
-  context.textAlign = "center";
-  context.textBaseline = "middle";
+  context.font = `${fontWeight} ${fontSize}px ${FONT_FAMILY}`;
+  context.textAlign = options.align ?? "center";
+  context.textBaseline = "alphabetic";
 
-  const lineHeight = fontSize * 0.98;
-  const startY = height / 2 - ((lines.length - 1) * lineHeight) / 2;
+  const metrics = context.measureText(lines[0] ?? text);
+  const ascent = metrics.actualBoundingBoxAscent || fontSize * 0.78;
+  const descent = metrics.actualBoundingBoxDescent || fontSize * 0.22;
+  const textHeight = (lines.length - 1) * lineHeight + ascent + descent;
+  const firstBaseline = height / 2 - textHeight / 2 + ascent;
 
   lines.forEach((line, index) => {
-    context.fillText(line, width / 2, startY + index * lineHeight);
+    const x =
+      options.align === "left"
+        ? 0
+        : options.align === "right"
+          ? width
+          : width / 2;
+    context.fillText(line, x, firstBaseline + index * lineHeight);
   });
 
   const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
@@ -230,6 +283,10 @@ function getTextTargets(
 }
 
 function assignTargets(particles: Particle[], targets: Point[]) {
+  if (targets.length === 0) {
+    return;
+  }
+
   particles.forEach((particle, index) => {
     const target = targets[index % targets.length];
     particle.tx = target.x;
@@ -251,6 +308,15 @@ function offsetTargets(targets: Point[], offsetX: number, offsetY: number) {
     x: target.x + offsetX,
     y: target.y + offsetY,
   }));
+}
+
+function isVisible(rect: DOMRect) {
+  return rect.bottom > 0 && rect.top < window.innerHeight;
+}
+
+function parsePixels(value: string, fallback: number) {
+  const parsed = Number.parseFloat(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
 }
 
 export default function ParticleTitle({ introText, heroText, titleId }: Props) {
@@ -283,8 +349,10 @@ export default function ParticleTitle({ introText, heroText, titleId }: Props) {
     const particleCanvas = canvas;
     const particleHost = host;
     const particleContext = context;
+    const targetCache = new Map<string, Point[]>();
 
     document.documentElement.dataset.homeReveal = "intro";
+    document.documentElement.dataset.particlePage = "enhanced";
     setIsEnhanced(true);
 
     let animationFrame = 0;
@@ -294,6 +362,7 @@ export default function ParticleTitle({ introText, heroText, titleId }: Props) {
     let particles: Particle[] = [];
     let domainTargets: Point[] = [];
     let heroTargets: Point[] = [];
+    let activePageTargetId = "hero";
     let state: MotionState = "forming-domain";
     let canTriggerHeroMorph = false;
     let domainSettledAt = 0;
@@ -308,8 +377,129 @@ export default function ParticleTitle({ introText, heroText, titleId }: Props) {
       );
     }
 
+    function getPageTargets(): PageTitleTarget[] {
+      const sectionTargets = Array.from(
+        document.querySelectorAll<HTMLElement>("[data-particle-title]"),
+      ).map((element, index) => ({
+        element,
+        id: element.id || `section-${index}`,
+        text: element.dataset.particleTitle || element.textContent || "",
+        variant: "section" as const,
+      }));
+
+      return [
+        {
+          element: particleHost,
+          id: "hero",
+          text: heroText,
+          variant: "hero",
+        },
+        ...sectionTargets,
+      ];
+    }
+
+    function getLocalTargetsForElement(target: PageTitleTarget, count: number) {
+      const rect = target.element.getBoundingClientRect();
+      const computedStyle = getComputedStyle(target.element);
+      const cacheWidth = Math.max(1, Math.round(rect.width));
+      const cacheHeight = Math.max(1, Math.round(rect.height));
+      const fontSize = parsePixels(
+        computedStyle.fontSize,
+        target.variant === "hero" ? 118 : 96,
+      );
+      const lineHeight = parsePixels(computedStyle.lineHeight, fontSize * 1.02);
+      const fontWeight =
+        computedStyle.fontWeight === "normal"
+          ? "780"
+          : computedStyle.fontWeight;
+      const cacheKey = [
+        target.id,
+        target.text,
+        cacheWidth,
+        cacheHeight,
+        count,
+        fontSize,
+        lineHeight,
+        fontWeight,
+        target.variant,
+      ].join(":");
+      const cachedTargets = targetCache.get(cacheKey);
+
+      if (cachedTargets) {
+        return cachedTargets;
+      }
+
+      const localTargets =
+        target.variant === "section"
+          ? getTextTargets(target.text, cacheWidth, cacheHeight, count, {
+              align: "left",
+              fontSize,
+              fontWeight,
+              lineHeight,
+              variant: "section",
+            })
+          : getTextTargets(target.text, cacheWidth, cacheHeight, count, {
+              variant: "hero",
+            });
+
+      targetCache.set(cacheKey, localTargets);
+      return localTargets;
+    }
+
+    function getTargetsForElement(target: PageTitleTarget, count: number) {
+      const rect = target.element.getBoundingClientRect();
+      return offsetTargets(
+        getLocalTargetsForElement(target, count),
+        rect.left,
+        rect.top,
+      );
+    }
+
+    function choosePageTarget() {
+      const pageTargets = getPageTargets();
+      const visibleTargets = pageTargets
+        .map((target) => ({
+          rect: target.element.getBoundingClientRect(),
+          target,
+        }))
+        .filter(({ rect }) => isVisible(rect));
+
+      if (visibleTargets.length > 0) {
+        visibleTargets.sort((a, b) => a.rect.top - b.rect.top);
+        return visibleTargets[visibleTargets.length - 1].target;
+      }
+
+      return (
+        pageTargets.find((target) => target.id === activePageTargetId) ??
+        pageTargets[0]
+      );
+    }
+
+    function retargetToPageTitle({ force = false } = {}) {
+      if (state !== "page-ready") {
+        return;
+      }
+
+      const count = getParticleCount(width);
+      const nextTarget = choosePageTarget();
+      const nextTargets = getTargetsForElement(nextTarget, count);
+
+      if (nextTargets.length === 0) {
+        return;
+      }
+
+      activePageTargetId = nextTarget.id;
+      assignTargets(particles, nextTargets);
+
+      if (force) {
+        lockParticlesToTargets(particles);
+      }
+
+      scheduleTick();
+    }
+
     function startHeroMorph() {
-      if (state === "forming-hero" || state === "hero-settled") {
+      if (state === "forming-hero" || state === "page-ready") {
         return;
       }
 
@@ -342,7 +532,7 @@ export default function ParticleTitle({ introText, heroText, titleId }: Props) {
     }
 
     function handleIntentInput(event: Event) {
-      if (state === "hero-settled") {
+      if (state === "page-ready") {
         return;
       }
 
@@ -356,14 +546,15 @@ export default function ParticleTitle({ introText, heroText, titleId }: Props) {
       requestHeroMorphFromIntent();
     }
 
+    function handleScroll() {
+      retargetToPageTitle();
+    }
+
     function resize() {
-      const rect = particleHost.getBoundingClientRect();
-      const isOverlayCanvas = state !== "hero-settled";
-      width = isOverlayCanvas ? window.innerWidth : Math.max(320, rect.width);
-      height = isOverlayCanvas
-        ? window.innerHeight
-        : Math.max(260, rect.height);
+      width = window.innerWidth;
+      height = window.innerHeight;
       pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+      targetCache.clear();
 
       particleCanvas.width = Math.floor(width * pixelRatio);
       particleCanvas.height = Math.floor(height * pixelRatio);
@@ -371,22 +562,25 @@ export default function ParticleTitle({ introText, heroText, titleId }: Props) {
       particleCanvas.style.height = `${height}px`;
 
       const count = getParticleCount(width);
-      domainTargets = getTextTargets(introText, width, height, count, "domain");
-      heroTargets = isOverlayCanvas
-        ? offsetTargets(
-            getTextTargets(
-              heroText,
-              Math.max(320, rect.width),
-              Math.max(260, rect.height),
-              count,
-              "hero",
-            ),
-            rect.left,
-            rect.top,
-          )
-        : getTextTargets(heroText, width, height, count, "hero");
+      const heroTarget: PageTitleTarget = {
+        element: particleHost,
+        id: "hero",
+        text: heroText,
+        variant: "hero",
+      };
 
-      if (domainTargets.length === 0 || heroTargets.length === 0) {
+      domainTargets = getTextTargets(introText, width, height, count, {
+        variant: "domain",
+      });
+      heroTargets = getTargetsForElement(heroTarget, count);
+
+      if (heroTargets.length === 0) {
+        heroTargets = getTextTargets(heroText, width, height, count, {
+          variant: "hero",
+        });
+      }
+
+      if (domainTargets.length === 0) {
         return;
       }
 
@@ -402,14 +596,18 @@ export default function ParticleTitle({ introText, heroText, titleId }: Props) {
         }
       }
 
+      if (state === "page-ready") {
+        retargetToPageTitle({ force: true });
+        draw();
+        return;
+      }
+
       assignTargets(
         particles,
-        state === "forming-hero" || state === "hero-settled"
-          ? heroTargets
-          : domainTargets,
+        state === "forming-hero" ? heroTargets : domainTargets,
       );
 
-      if (state === "domain-settled" || state === "hero-settled") {
+      if (state === "domain-settled") {
         lockParticlesToTargets(particles);
         draw();
         return;
@@ -470,8 +668,8 @@ export default function ParticleTitle({ introText, heroText, titleId }: Props) {
       }
 
       let settledCount = 0;
-      const spring = state === "forming-hero" ? 0.018 : 0.014;
-      const damping = state === "forming-hero" ? 0.865 : 0.878;
+      const spring = state === "forming-domain" ? 0.014 : 0.018;
+      const damping = state === "forming-domain" ? 0.878 : 0.865;
 
       for (const particle of particles) {
         const dx = particle.tx - particle.x;
@@ -510,15 +708,24 @@ export default function ParticleTitle({ introText, heroText, titleId }: Props) {
             canTriggerHeroMorph = true;
           }, POST_DOMAIN_INPUT_DELAY);
         } else if (state === "forming-hero") {
-          state = "hero-settled";
-          resize();
+          state = "page-ready";
+          activePageTargetId = "hero";
           document.documentElement.dataset.homeReveal = "ready";
+          retargetToPageTitle({ force: true });
         }
       }
 
       draw();
 
-      if (state !== "domain-settled" && state !== "hero-settled") {
+      const settledRatio = settledCount / particles.length;
+      const needsStateTransition =
+        (state === "forming-domain" || state === "forming-hero") &&
+        settledFrames <= 12;
+
+      if (
+        state !== "domain-settled" &&
+        (needsStateTransition || settledRatio < 1)
+      ) {
         scheduleTick();
       }
     }
@@ -527,6 +734,7 @@ export default function ParticleTitle({ introText, heroText, titleId }: Props) {
     scheduleTick();
 
     window.addEventListener("resize", resize);
+    window.addEventListener("scroll", handleScroll, { passive: true });
     window.addEventListener("wheel", handleIntentInput, { passive: true });
     window.addEventListener("touchmove", handleIntentInput, {
       passive: true,
@@ -538,7 +746,9 @@ export default function ParticleTitle({ introText, heroText, titleId }: Props) {
       window.cancelAnimationFrame(animationFrame);
       window.clearTimeout(triggerDelay);
       delete document.documentElement.dataset.homeReveal;
+      delete document.documentElement.dataset.particlePage;
       window.removeEventListener("resize", resize);
+      window.removeEventListener("scroll", handleScroll);
       window.removeEventListener("wheel", handleIntentInput);
       window.removeEventListener("touchmove", handleIntentInput);
       window.removeEventListener("pointerdown", handleIntentInput);
@@ -546,18 +756,23 @@ export default function ParticleTitle({ introText, heroText, titleId }: Props) {
     };
   }, [heroText, introText]);
 
-  return (
-    <div
-      className={`particle-title ${isEnhanced ? "particle-title--enhanced" : ""}`}
-    >
-      <canvas
-        aria-hidden="true"
-        className="particle-title__canvas"
-        ref={canvasRef}
-      />
-      <h1 className="particle-title__fallback" id={titleId}>
-        {heroText}
-      </h1>
-    </div>
+  return createElement(
+    "div",
+    {
+      className: `particle-title ${isEnhanced ? "particle-title--enhanced" : ""}`,
+    },
+    createElement("canvas", {
+      "aria-hidden": "true",
+      className: "particle-title__canvas",
+      ref: canvasRef,
+    }),
+    createElement(
+      "h1",
+      {
+        className: "particle-title__fallback",
+        id: titleId,
+      },
+      heroText,
+    ),
   );
 }
