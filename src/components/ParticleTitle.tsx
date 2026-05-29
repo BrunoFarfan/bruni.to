@@ -310,6 +310,23 @@ function offsetTargets(targets: Point[], offsetX: number, offsetY: number) {
   }));
 }
 
+function getScrollOffset() {
+  return {
+    x: window.scrollX,
+    y: window.scrollY,
+  };
+}
+
+function getPageEdgeSpawn(width: number, height: number) {
+  const scroll = getScrollOffset();
+  const particle = getEdgeSpawn(width, height);
+
+  particle.x += scroll.x;
+  particle.y += scroll.y;
+
+  return particle;
+}
+
 function isVisible(rect: DOMRect) {
   return rect.bottom > 0 && rect.top < window.innerHeight;
 }
@@ -363,6 +380,7 @@ export default function ParticleTitle({ introText, heroText, titleId }: Props) {
     let domainTargets: Point[] = [];
     let heroTargets: Point[] = [];
     let activePageTargetId = "hero";
+    let isPageTargetSettled = false;
     let state: MotionState = "forming-domain";
     let canTriggerHeroMorph = false;
     let domainSettledAt = 0;
@@ -448,10 +466,11 @@ export default function ParticleTitle({ introText, heroText, titleId }: Props) {
 
     function getTargetsForElement(target: PageTitleTarget, count: number) {
       const rect = target.element.getBoundingClientRect();
+      const scroll = getScrollOffset();
       return offsetTargets(
         getLocalTargetsForElement(target, count),
-        rect.left,
-        rect.top,
+        rect.left + scroll.x,
+        rect.top + scroll.y,
       );
     }
 
@@ -482,20 +501,54 @@ export default function ParticleTitle({ introText, heroText, titleId }: Props) {
 
       const count = getParticleCount(width);
       const nextTarget = choosePageTarget();
-      const nextTargets = getTargetsForElement(nextTarget, count);
+      const isSameTarget = nextTarget.id === activePageTargetId;
+      const nextLocalTargets = getLocalTargetsForElement(nextTarget, count);
+
+      if (nextLocalTargets.length === 0) {
+        return;
+      }
+
+      const nextRect = nextTarget.element.getBoundingClientRect();
+      const scroll = getScrollOffset();
+      const nextTargets = offsetTargets(
+        nextLocalTargets,
+        nextRect.left + scroll.x,
+        nextRect.top + scroll.y,
+      );
 
       if (nextTargets.length === 0) {
         return;
       }
 
+      if (isSameTarget && !force) {
+        if (!isPageTargetSettled) {
+          return;
+        }
+
+        draw();
+        return;
+      }
+
       activePageTargetId = nextTarget.id;
+      isPageTargetSettled = false;
+      settledFrames = 0;
       assignTargets(particles, nextTargets);
 
       if (force) {
         lockParticlesToTargets(particles);
+        isPageTargetSettled = true;
       }
 
       scheduleTick();
+    }
+
+    function lockCurrentPageTarget() {
+      if (state !== "page-ready" || isPageTargetSettled) {
+        return;
+      }
+
+      lockParticlesToTargets(particles);
+      isPageTargetSettled = true;
     }
 
     function startHeroMorph() {
@@ -548,6 +601,10 @@ export default function ParticleTitle({ introText, heroText, titleId }: Props) {
 
     function handleScroll() {
       retargetToPageTitle();
+
+      if (state === "page-ready" && isPageTargetSettled) {
+        draw();
+      }
     }
 
     function resize() {
@@ -572,6 +629,11 @@ export default function ParticleTitle({ introText, heroText, titleId }: Props) {
       domainTargets = getTextTargets(introText, width, height, count, {
         variant: "domain",
       });
+      domainTargets = offsetTargets(
+        domainTargets,
+        window.scrollX,
+        window.scrollY,
+      );
       heroTargets = getTargetsForElement(heroTarget, count);
 
       if (heroTargets.length === 0) {
@@ -586,13 +648,13 @@ export default function ParticleTitle({ introText, heroText, titleId }: Props) {
 
       if (particles.length === 0) {
         particles = Array.from({ length: count }, () =>
-          getEdgeSpawn(width, height),
+          getPageEdgeSpawn(width, height),
         );
       } else if (particles.length > count) {
         particles = particles.slice(0, count);
       } else {
         while (particles.length < count) {
-          particles.push(getEdgeSpawn(width, height));
+          particles.push(getPageEdgeSpawn(width, height));
         }
       }
 
@@ -644,10 +706,14 @@ export default function ParticleTitle({ introText, heroText, titleId }: Props) {
       particleContext.beginPath();
 
       const radius = width < 520 ? 1.35 : 1.65;
+      const scroll = getScrollOffset();
 
       for (const particle of particles) {
-        particleContext.moveTo(particle.x + radius, particle.y);
-        particleContext.arc(particle.x, particle.y, radius, 0, Math.PI * 2);
+        const x = particle.x - scroll.x;
+        const y = particle.y - scroll.y;
+
+        particleContext.moveTo(x + radius, y);
+        particleContext.arc(x, y, radius, 0, Math.PI * 2);
       }
 
       particleContext.fill();
@@ -710,8 +776,12 @@ export default function ParticleTitle({ introText, heroText, titleId }: Props) {
         } else if (state === "forming-hero") {
           state = "page-ready";
           activePageTargetId = "hero";
+          isPageTargetSettled = false;
           document.documentElement.dataset.homeReveal = "ready";
           retargetToPageTitle({ force: true });
+        } else if (state === "page-ready") {
+          lockCurrentPageTarget();
+          settledFrames = 0;
         }
       }
 
@@ -721,10 +791,12 @@ export default function ParticleTitle({ introText, heroText, titleId }: Props) {
       const needsStateTransition =
         (state === "forming-domain" || state === "forming-hero") &&
         settledFrames <= 12;
+      const needsPageLock =
+        state === "page-ready" && !isPageTargetSettled && settledFrames <= 12;
 
       if (
         state !== "domain-settled" &&
-        (needsStateTransition || settledRatio < 1)
+        (needsStateTransition || needsPageLock || settledRatio < 1)
       ) {
         scheduleTick();
       }
