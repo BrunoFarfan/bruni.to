@@ -178,7 +178,7 @@ h1 {
 .page-title-link svg {
   position: absolute;
   right: 0;
-  top: -0.08em;
+  top: 50%;
   width: clamp(2rem, 4.5vw, 3.4rem);
   height: clamp(2rem, 4.5vw, 3.4rem);
   fill: none;
@@ -186,7 +186,7 @@ h1 {
   stroke-width: 2.35;
   stroke-linecap: round;
   stroke-linejoin: round;
-  transform: translate(-0.08em, 0.08em);
+  transform: translate(-0.08em, -52%);
   transition:
     color 160ms ease,
     transform 160ms ease;
@@ -199,7 +199,7 @@ h1 {
 
 .page-title-link:hover svg {
   color: var(--color-accent-strong);
-  transform: translate(0, 0);
+  transform: translate(0.02em, -58%);
 }
 
 h2 {
@@ -318,11 +318,7 @@ html[data-home-reveal="morphing"] .particle-title__fallback {
 
 .external-text-link span {
   text-decoration: underline;
-  text-decoration-color: color-mix(
-    in srgb,
-    var(--color-accent) 45%,
-    transparent
-  );
+  text-decoration-color: transparent;
   text-underline-offset: 0.22em;
   transition:
     color 160ms ease,
@@ -337,7 +333,7 @@ html[data-home-reveal="morphing"] .particle-title__fallback {
   stroke-width: 2.35;
   stroke-linecap: round;
   stroke-linejoin: round;
-  transform: translate(-0.06rem, -0.04rem);
+  transform: translate(0, 0);
   transition: transform 160ms ease;
 }
 
@@ -347,7 +343,7 @@ html[data-home-reveal="morphing"] .particle-title__fallback {
 }
 
 .external-text-link:hover svg {
-  transform: translate(0, 0);
+  transform: translate(0.12rem, -0.12rem);
 }
 
 .home-index-section {
@@ -405,13 +401,9 @@ html[data-home-reveal="ready"] .site-footer {
   animation: home-text-reveal 940ms linear 220ms both;
 }
 
-.home-index-section + .home-index-section {
-  border-top: 1px solid var(--color-border);
-}
-
 .home-section-heading {
   display: grid;
-  grid-template-columns: 12rem minmax(0, 1fr);
+  grid-template-columns: minmax(3.5rem, 0.12fr) minmax(0, 1fr);
   gap: clamp(1rem, 4vw, 2.5rem);
   align-items: baseline;
   margin-bottom: clamp(1.8rem, 4vw, 3rem);
@@ -430,7 +422,6 @@ html[data-home-reveal="ready"] .site-footer {
 
 .home-project-list {
   display: grid;
-  border-top: 1px solid var(--color-border);
 }
 
 .home-project {
@@ -438,7 +429,6 @@ html[data-home-reveal="ready"] .site-footer {
   grid-template-columns: minmax(0, 1fr) minmax(12rem, 0.28fr);
   gap: clamp(1rem, 4vw, 2rem);
   align-items: start;
-  border-bottom: 1px solid var(--color-border);
   padding-block: clamp(1.25rem, 3vw, 2rem);
 }
 
@@ -529,7 +519,6 @@ html[data-home-reveal="ready"] .site-footer {
 }
 
 .site-footer {
-  border-top: 1px solid var(--color-border);
   padding-block: 2rem;
   color: var(--color-muted);
 }

@@ -15,6 +15,7 @@ pnpm-debug.log*
 
 # codex outputs
 output/
+.playwright-cli/
 
 # environment variables
 .env
