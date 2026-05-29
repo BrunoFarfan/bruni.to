@@ -2,12 +2,29 @@
 import Layout from "../layouts/Layout.astro";
 import ParticleTitle from "../components/ParticleTitle";
 import { labProjects, workProjects } from "../data/projects";
+
+const contactLinks = [
+    {
+        href: "mailto:bruno.farfan.miquel@uc.cl",
+        label: "Email",
+        ariaLabel: "Email Bruno Farfan Miquel",
+    },
+    {
+        href: "https://github.com/BrunoFarfan",
+        label: "GitHub",
+        ariaLabel: "Open GitHub in a new tab",
+    },
+    {
+        href: "https://www.linkedin.com/in/bruno-farfan-miquel",
+        label: "LinkedIn",
+        ariaLabel: "Open LinkedIn in a new tab",
+    },
+];
 ---
 
 <Layout
     title="Bruno Farfan Miquel"
     description="A personal portfolio for selected work, technical experiments, and notes across AI, automation, document intelligence, and software engineering."
-    showHeader={false}
 >
     <script is:inline>
         try {
@@ -34,11 +51,27 @@ import { labProjects, workProjects } from "../data/projects";
                 I move between data science experimentation and production software engineering, building AI automation, scraping systems, document workflows, and practical tools that survive contact with real users.
             </p>
             <div class="home-hero__links" aria-label="Primary links">
-                <a href="mailto:bruno.farfan.miquel@uc.cl">Email</a>
-                <a href="https://github.com/BrunoFarfan">GitHub</a>
-                <a href="https://www.linkedin.com/in/bruno-farfan-miquel"
-                    >LinkedIn</a
-                >
+                {
+                    contactLinks.map((link) => (
+                        <a
+                            class="external-text-link"
+                            href={link.href}
+                            target={link.href.startsWith("mailto:") ? undefined : "_blank"}
+                            rel={link.href.startsWith("mailto:") ? undefined : "noreferrer"}
+                            aria-label={link.ariaLabel}
+                        >
+                            <span>{link.label}</span>
+                            <svg
+                                viewBox="0 0 24 24"
+                                aria-hidden="true"
+                                focusable="false"
+                            >
+                                <path d="M7 17 17 7" />
+                                <path d="M9 7h8v8" />
+                            </svg>
+                        </a>
+                    ))
+                }
             </div>
         </div>
     </section>
@@ -55,10 +88,7 @@ import { labProjects, workProjects } from "../data/projects";
                     {
                         workProjects.map((project, index) => (
                             <article class="home-project">
-                                <a
-                                    class="home-project__main"
-                                    href={project.href}
-                                >
+                                <div class="home-project__main">
                                     <span class="home-project__number">
                                         {String(index + 1).padStart(2, "0")}
                                     </span>
@@ -66,14 +96,36 @@ import { labProjects, workProjects } from "../data/projects";
                                         <span class="home-project__meta">
                                             {project.status}
                                         </span>
-                                        <span class="home-project__title">
-                                            {project.title}
-                                        </span>
+                                        <a
+                                            class="page-title-link home-project__title-link"
+                                            href={project.externalUrl}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            aria-label={project.externalLabel}
+                                        >
+                                            <span>{project.title}</span>
+                                            <svg
+                                                viewBox="0 0 24 24"
+                                                aria-hidden="true"
+                                                focusable="false"
+                                            >
+                                                <path d="M7 17 17 7" />
+                                                <path d="M9 7h8v8" />
+                                            </svg>
+                                        </a>
                                         <span class="home-project__summary">
                                             {project.summary}
                                         </span>
+                                        <span class="home-project__detail-heading">
+                                            {project.detailHeading}
+                                        </span>
+                                        <span class="home-project__details">
+                                            {project.details.map((detail) => (
+                                                <p>{detail}</p>
+                                            ))}
+                                        </span>
                                     </span>
-                                </a>
+                                </div>
                                 <ul
                                     class="tag-list home-project__tags"
                                     aria-label={`${project.title} topics`}
@@ -100,10 +152,7 @@ import { labProjects, workProjects } from "../data/projects";
                     {
                         labProjects.map((project, index) => (
                             <article class="home-project">
-                                <a
-                                    class="home-project__main"
-                                    href={project.href}
-                                >
+                                <div class="home-project__main">
                                     <span class="home-project__number">
                                         {String(index + 1).padStart(2, "0")}
                                     </span>
@@ -111,14 +160,36 @@ import { labProjects, workProjects } from "../data/projects";
                                         <span class="home-project__meta">
                                             {project.status}
                                         </span>
-                                        <span class="home-project__title">
-                                            {project.title}
-                                        </span>
+                                        <a
+                                            class="page-title-link home-project__title-link"
+                                            href={project.externalUrl}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            aria-label={project.externalLabel}
+                                        >
+                                            <span>{project.title}</span>
+                                            <svg
+                                                viewBox="0 0 24 24"
+                                                aria-hidden="true"
+                                                focusable="false"
+                                            >
+                                                <path d="M7 17 17 7" />
+                                                <path d="M9 7h8v8" />
+                                            </svg>
+                                        </a>
                                         <span class="home-project__summary">
                                             {project.summary}
                                         </span>
+                                        <span class="home-project__detail-heading">
+                                            {project.detailHeading}
+                                        </span>
+                                        <span class="home-project__details">
+                                            {project.details.map((detail) => (
+                                                <p>{detail}</p>
+                                            ))}
+                                        </span>
                                     </span>
-                                </a>
+                                </div>
                                 <ul
                                     class="tag-list home-project__tags"
                                     aria-label={`${project.title} topics`}

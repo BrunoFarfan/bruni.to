@@ -26,7 +26,7 @@ type MotionState =
 
 const SETTLE_DISTANCE = 0.75;
 const SETTLE_SPEED = 0.08;
-const POST_DOMAIN_INPUT_DELAY = 1500;
+const POST_DOMAIN_INPUT_DELAY = 350;
 
 function getParticleCount(width: number) {
   if (width < 520) {
@@ -143,7 +143,8 @@ function getTextTargets(
   const minFontSize = variant === "domain" ? 52 : 34;
   let fontSize = maxFontSize;
   let lines: string[] = [text];
-  const fontFamily = 'Georgia, "Times New Roman", serif';
+  const fontFamily =
+    'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
 
   while (fontSize > minFontSize) {
     context.font = `780 ${fontSize}px ${fontFamily}`;
@@ -330,10 +331,6 @@ export default function ParticleTitle({ introText, heroText, titleId }: Props) {
       scheduleTick();
     }
 
-    function isScrollLocked() {
-      return state !== "hero-settled";
-    }
-
     function requestHeroMorphFromIntent() {
       if (
         state === "domain-settled" &&
@@ -344,12 +341,18 @@ export default function ParticleTitle({ introText, heroText, titleId }: Props) {
       }
     }
 
-    function handleBlockedInput(event: Event) {
-      if (!isScrollLocked()) {
+    function handleIntentInput(event: Event) {
+      if (state === "hero-settled") {
         return;
       }
 
-      event.preventDefault();
+      if (
+        event instanceof KeyboardEvent &&
+        (event.metaKey || event.ctrlKey || event.altKey)
+      ) {
+        return;
+      }
+
       requestHeroMorphFromIntent();
     }
 
@@ -524,22 +527,22 @@ export default function ParticleTitle({ introText, heroText, titleId }: Props) {
     scheduleTick();
 
     window.addEventListener("resize", resize);
-    window.addEventListener("wheel", handleBlockedInput, { passive: false });
-    window.addEventListener("touchmove", handleBlockedInput, {
-      passive: false,
+    window.addEventListener("wheel", handleIntentInput, { passive: true });
+    window.addEventListener("touchmove", handleIntentInput, {
+      passive: true,
     });
-    window.addEventListener("pointerdown", handleBlockedInput);
-    window.addEventListener("keydown", handleBlockedInput);
+    window.addEventListener("pointerdown", handleIntentInput);
+    window.addEventListener("keydown", handleIntentInput);
 
     return () => {
       window.cancelAnimationFrame(animationFrame);
       window.clearTimeout(triggerDelay);
       delete document.documentElement.dataset.homeReveal;
       window.removeEventListener("resize", resize);
-      window.removeEventListener("wheel", handleBlockedInput);
-      window.removeEventListener("touchmove", handleBlockedInput);
-      window.removeEventListener("pointerdown", handleBlockedInput);
-      window.removeEventListener("keydown", handleBlockedInput);
+      window.removeEventListener("wheel", handleIntentInput);
+      window.removeEventListener("touchmove", handleIntentInput);
+      window.removeEventListener("pointerdown", handleIntentInput);
+      window.removeEventListener("keydown", handleIntentInput);
     };
   }, [heroText, introText]);
 

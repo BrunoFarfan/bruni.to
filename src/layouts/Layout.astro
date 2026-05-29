@@ -1,36 +1,17 @@
 ---
 import Footer from '../components/Footer.astro';
-import Header from '../components/Header.astro';
 import '../styles/global.css';
 
 interface Props {
 	title: string;
 	description: string;
 	canonicalPath?: string;
-	showHeader?: boolean;
 }
 
 const siteName = 'Bruno Farfan Miquel';
-const {
-	title,
-	description,
-	canonicalPath = Astro.url.pathname,
-	showHeader = true,
-} = Astro.props;
+const { title, description, canonicalPath = Astro.url.pathname } = Astro.props;
 const pageTitle = title === siteName ? title : `${title} | ${siteName}`;
 const canonicalUrl = new URL(canonicalPath, Astro.site ?? Astro.url.origin).toString();
-const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
-const backLinks: Record<string, { href: string; label: string }> = {
-	'/about': { href: '/', label: 'Back to home' },
-	'/contact': { href: '/', label: 'Back to home' },
-	'/work': { href: '/', label: 'Back to home' },
-	'/work/skip': { href: '/work', label: 'Back to work' },
-	'/work/unholster-ds': { href: '/work', label: 'Back to work' },
-	'/lab': { href: '/', label: 'Back to home' },
-	'/lab/ogai': { href: '/lab', label: 'Back to lab' },
-	'/lab/mike': { href: '/lab', label: 'Back to lab' },
-};
-const backLink = backLinks[currentPath];
 ---
 
 <!doctype html>
@@ -64,20 +45,7 @@ const backLink = backLinks[currentPath];
 	<body>
 		<a class="skip-link" href="#main">Skip to content</a>
 		<div class="site-shell">
-			{showHeader && <Header />}
 			<main id="main" class="site-main">
-				{
-					backLink && (
-						<div class="container page-back">
-							<a class="back-link" href={backLink.href} aria-label={backLink.label}>
-								<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-									<path d="M15 5 8 12l7 7" />
-								</svg>
-								<span>{backLink.label}</span>
-							</a>
-						</div>
-					)
-				}
 				<slot />
 			</main>
 			<Footer />
