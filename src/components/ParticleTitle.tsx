@@ -16,6 +16,9 @@ type Particle = Point & {
   vy: number;
   tx: number;
   ty: number;
+  opacity: number;
+  scale: number;
+  mode: "active" | "born" | "retiring";
 };
 
 type MotionState =
@@ -47,16 +50,106 @@ const POST_DOMAIN_INPUT_DELAY = 350;
 const FONT_FAMILY =
   'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
 
-function getParticleCount(width: number) {
+function getInkPixelsPerParticle(width: number) {
   if (width < 520) {
-    return 1500;
+    return 2.5;
   }
 
   if (width < 900) {
-    return 2800;
+    return 7.5;
   }
 
-  return 4800;
+  return 10;
+}
+
+function getMinimumParticleCount(width: number) {
+  return width < 520 ? 720 : 980;
+}
+
+function getMaximumParticleCount(width: number) {
+  if (width < 520) {
+    return 2600;
+  }
+
+  if (width < 900) {
+    return 5000;
+  }
+
+  return 8000;
+}
+
+function clampCount(count: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, count));
+}
+
+function jitterPoint(point: Point, amount: number) {
+  return {
+    x: point.x + (Math.random() - 0.5) * amount,
+    y: point.y + (Math.random() - 0.5) * amount,
+  };
+}
+
+function sampleStratifiedPoints(
+  points: Point[],
+  targetCount: number,
+  width: number,
+  step: number,
+) {
+  if (points.length <= targetCount) {
+    return points.map((point) => jitterPoint(point, step));
+  }
+
+  const cellSize = Math.max(step, Math.sqrt(getInkPixelsPerParticle(width)));
+  const cells = new Map<string, Point[]>();
+
+  for (const point of points) {
+    const cellX = Math.floor(point.x / cellSize);
+    const cellY = Math.floor(point.y / cellSize);
+    const cellKey = `${cellX}:${cellY}`;
+    const cellPoints = cells.get(cellKey);
+
+    if (cellPoints) {
+      cellPoints.push(point);
+    } else {
+      cells.set(cellKey, [point]);
+    }
+  }
+
+  const shuffledCells = Array.from(cells.values());
+
+  for (let index = shuffledCells.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [shuffledCells[index], shuffledCells[swapIndex]] = [
+      shuffledCells[swapIndex],
+      shuffledCells[index],
+    ];
+  }
+
+  const sampledPoints: Point[] = [];
+  const unusedPoints: Point[] = [];
+
+  for (const cellPoints of shuffledCells) {
+    const selectedIndex = Math.floor(Math.random() * cellPoints.length);
+    sampledPoints.push(jitterPoint(cellPoints[selectedIndex], 0.55));
+
+    for (let index = 0; index < cellPoints.length; index += 1) {
+      if (index !== selectedIndex) {
+        unusedPoints.push(cellPoints[index]);
+      }
+    }
+  }
+
+  if (sampledPoints.length > targetCount) {
+    return sampledPoints.slice(0, targetCount);
+  }
+
+  while (sampledPoints.length < targetCount && unusedPoints.length > 0) {
+    const selectedIndex = Math.floor(Math.random() * unusedPoints.length);
+    const [point] = unusedPoints.splice(selectedIndex, 1);
+    sampledPoints.push(jitterPoint(point, 0.45));
+  }
+
+  return sampledPoints;
 }
 
 function getEdgeSpawn(width: number, height: number): Particle {
@@ -72,6 +165,9 @@ function getEdgeSpawn(width: number, height: number): Particle {
       vy: drift,
       tx: 0,
       ty: 0,
+      opacity: 1,
+      scale: 1,
+      mode: "active",
     };
   }
 
@@ -83,6 +179,9 @@ function getEdgeSpawn(width: number, height: number): Particle {
       vy: speed * (Math.random() < 0.5 ? -1 : 1),
       tx: 0,
       ty: 0,
+      opacity: 1,
+      scale: 1,
+      mode: "active",
     };
   }
 
@@ -94,6 +193,9 @@ function getEdgeSpawn(width: number, height: number): Particle {
       vy: drift,
       tx: 0,
       ty: 0,
+      opacity: 1,
+      scale: 1,
+      mode: "active",
     };
   }
 
@@ -104,6 +206,9 @@ function getEdgeSpawn(width: number, height: number): Particle {
     vy: speed * (Math.random() < 0.5 ? -1 : 1),
     tx: 0,
     ty: 0,
+    opacity: 1,
+    scale: 1,
+    mode: "active",
   };
 }
 
@@ -178,7 +283,6 @@ function getTextTargets(
   text: string,
   width: number,
   height: number,
-  desiredCount: number,
   options: TextTargetOptions,
 ) {
   const canvas = document.createElement("canvas");
@@ -238,8 +342,8 @@ function getTextTargets(
 
       if (alpha > 80) {
         points.push({
-          x: x + (Math.random() - 0.5) * 0.8,
-          y: y + (Math.random() - 0.5) * 0.8,
+          x,
+          y,
         });
       }
     }
@@ -249,48 +353,103 @@ function getTextTargets(
     return [];
   }
 
-  if (points.length >= desiredCount) {
-    const sampledPoints: Point[] = [];
-    const stride = points.length / desiredCount;
+  const targetCount = clampCount(
+    Math.round(points.length / getInkPixelsPerParticle(width)),
+    Math.min(getMinimumParticleCount(width), points.length),
+    getMaximumParticleCount(width),
+  );
 
-    for (let index = 0; index < desiredCount; index += 1) {
-      const sourceIndex = Math.min(
-        points.length - 1,
-        Math.floor(index * stride + stride * 0.5),
-      );
-      const point = points[sourceIndex];
-
-      sampledPoints.push({
-        x: point.x + (Math.random() - 0.5) * 0.45,
-        y: point.y + (Math.random() - 0.5) * 0.45,
-      });
-    }
-
-    return sampledPoints;
-  }
-
-  const filledPoints = [...points];
-
-  while (filledPoints.length < desiredCount) {
-    const point = points[Math.floor(Math.random() * points.length)];
-    filledPoints.push({
-      x: point.x + (Math.random() - 0.5) * step,
-      y: point.y + (Math.random() - 0.5) * step,
-    });
-  }
-
-  return filledPoints;
+  return sampleStratifiedPoints(points, targetCount, width, step);
 }
 
-function assignTargets(particles: Particle[], targets: Point[]) {
+function cloneParticle(particle: Particle): Particle {
+  const angle = Math.random() * Math.PI * 2;
+  const distance = 0.8 + Math.random() * 2.2;
+
+  return {
+    x: particle.x + Math.cos(angle) * distance,
+    y: particle.y + Math.sin(angle) * distance,
+    vx: particle.vx + (Math.random() - 0.5) * 0.9,
+    vy: particle.vy + (Math.random() - 0.5) * 0.9,
+    tx: particle.tx,
+    ty: particle.ty,
+    opacity: 0,
+    scale: 0.18,
+    mode: "born",
+  };
+}
+
+function shuffleParticles(particles: Particle[]) {
+  for (let index = particles.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [particles[index], particles[swapIndex]] = [
+      particles[swapIndex],
+      particles[index],
+    ];
+  }
+}
+
+function reconcileParticlesToTargets(
+  particles: Particle[],
+  targets: Point[],
+  { force = false, shuffle = false } = {},
+) {
   if (targets.length === 0) {
     return;
   }
 
+  if (force && particles.length > targets.length) {
+    particles.length = targets.length;
+  }
+
+  while (particles.length < targets.length) {
+    const source =
+      particles[Math.floor(Math.random() * particles.length)] ??
+      ({
+        x: targets[particles.length].x,
+        y: targets[particles.length].y,
+        vx: 0,
+        vy: 0,
+        tx: targets[particles.length].x,
+        ty: targets[particles.length].y,
+        opacity: force ? 1 : 0,
+        scale: force ? 1 : 0.18,
+        mode: force ? "active" : "born",
+      } satisfies Particle);
+
+    particles.push(force ? { ...source } : cloneParticle(source));
+  }
+
+  if (shuffle && !force) {
+    shuffleParticles(particles);
+  }
+
   particles.forEach((particle, index) => {
-    const target = targets[index % targets.length];
+    const target =
+      index < targets.length ? targets[index] : targets[index % targets.length];
+
     particle.tx = target.x;
     particle.ty = target.y;
+
+    if (index >= targets.length) {
+      particle.mode = "retiring";
+      return;
+    }
+
+    if (force) {
+      particle.x = target.x;
+      particle.y = target.y;
+      particle.vx = 0;
+      particle.vy = 0;
+      particle.opacity = 1;
+      particle.scale = 1;
+    }
+
+    if (particle.mode === "retiring") {
+      particle.mode = "active";
+      particle.opacity = Math.max(particle.opacity, 0.35);
+      particle.scale = Math.max(particle.scale, 0.55);
+    }
   });
 }
 
@@ -300,6 +459,9 @@ function lockParticlesToTargets(particles: Particle[]) {
     particle.y = particle.ty;
     particle.vx = 0;
     particle.vy = 0;
+    particle.opacity = 1;
+    particle.scale = 1;
+    particle.mode = "active";
   });
 }
 
@@ -416,7 +578,7 @@ export default function ParticleTitle({ introText, heroText, titleId }: Props) {
       ];
     }
 
-    function getLocalTargetsForElement(target: PageTitleTarget, count: number) {
+    function getLocalTargetsForElement(target: PageTitleTarget) {
       const rect = target.element.getBoundingClientRect();
       const computedStyle = getComputedStyle(target.element);
       const cacheWidth = Math.max(1, Math.round(rect.width));
@@ -435,7 +597,6 @@ export default function ParticleTitle({ introText, heroText, titleId }: Props) {
         target.text,
         cacheWidth,
         cacheHeight,
-        count,
         fontSize,
         lineHeight,
         fontWeight,
@@ -449,14 +610,14 @@ export default function ParticleTitle({ introText, heroText, titleId }: Props) {
 
       const localTargets =
         target.variant === "section"
-          ? getTextTargets(target.text, cacheWidth, cacheHeight, count, {
+          ? getTextTargets(target.text, cacheWidth, cacheHeight, {
               align: "left",
               fontSize,
               fontWeight,
               lineHeight,
               variant: "section",
             })
-          : getTextTargets(target.text, cacheWidth, cacheHeight, count, {
+          : getTextTargets(target.text, cacheWidth, cacheHeight, {
               variant: "hero",
             });
 
@@ -464,11 +625,11 @@ export default function ParticleTitle({ introText, heroText, titleId }: Props) {
       return localTargets;
     }
 
-    function getTargetsForElement(target: PageTitleTarget, count: number) {
+    function getTargetsForElement(target: PageTitleTarget) {
       const rect = target.element.getBoundingClientRect();
       const scroll = getScrollOffset();
       return offsetTargets(
-        getLocalTargetsForElement(target, count),
+        getLocalTargetsForElement(target),
         rect.left + scroll.x,
         rect.top + scroll.y,
       );
@@ -499,10 +660,9 @@ export default function ParticleTitle({ introText, heroText, titleId }: Props) {
         return;
       }
 
-      const count = getParticleCount(width);
       const nextTarget = choosePageTarget();
       const isSameTarget = nextTarget.id === activePageTargetId;
-      const nextLocalTargets = getLocalTargetsForElement(nextTarget, count);
+      const nextLocalTargets = getLocalTargetsForElement(nextTarget);
 
       if (nextLocalTargets.length === 0) {
         return;
@@ -532,10 +692,12 @@ export default function ParticleTitle({ introText, heroText, titleId }: Props) {
       activePageTargetId = nextTarget.id;
       isPageTargetSettled = false;
       settledFrames = 0;
-      assignTargets(particles, nextTargets);
+      reconcileParticlesToTargets(particles, nextTargets, {
+        force,
+        shuffle: true,
+      });
 
       if (force) {
-        lockParticlesToTargets(particles);
         isPageTargetSettled = true;
       }
 
@@ -543,7 +705,11 @@ export default function ParticleTitle({ introText, heroText, titleId }: Props) {
     }
 
     function lockCurrentPageTarget() {
-      if (state !== "page-ready" || isPageTargetSettled) {
+      if (
+        state !== "page-ready" ||
+        isPageTargetSettled ||
+        particles.some((particle) => particle.mode !== "active")
+      ) {
         return;
       }
 
@@ -559,11 +725,15 @@ export default function ParticleTitle({ introText, heroText, titleId }: Props) {
       state = "forming-hero";
       document.documentElement.dataset.homeReveal = "morphing";
       settledFrames = 0;
-      assignTargets(particles, heroTargets);
+      reconcileParticlesToTargets(particles, heroTargets, { shuffle: true });
 
+      const scroll = getScrollOffset();
       particles.forEach((particle) => {
         const angle =
-          Math.atan2(particle.y - height / 2, particle.x - width / 2) +
+          Math.atan2(
+            particle.y - (scroll.y + height / 2),
+            particle.x - (scroll.x + width / 2),
+          ) +
           (Math.random() - 0.5) * 0.8;
         const force = 4.4 + Math.random() * 6.8;
 
@@ -618,7 +788,6 @@ export default function ParticleTitle({ introText, heroText, titleId }: Props) {
       particleCanvas.style.width = `${width}px`;
       particleCanvas.style.height = `${height}px`;
 
-      const count = getParticleCount(width);
       const heroTarget: PageTitleTarget = {
         element: particleHost,
         id: "hero",
@@ -626,7 +795,7 @@ export default function ParticleTitle({ introText, heroText, titleId }: Props) {
         variant: "hero",
       };
 
-      domainTargets = getTextTargets(introText, width, height, count, {
+      domainTargets = getTextTargets(introText, width, height, {
         variant: "domain",
       });
       domainTargets = offsetTargets(
@@ -634,10 +803,10 @@ export default function ParticleTitle({ introText, heroText, titleId }: Props) {
         window.scrollX,
         window.scrollY,
       );
-      heroTargets = getTargetsForElement(heroTarget, count);
+      heroTargets = getTargetsForElement(heroTarget);
 
       if (heroTargets.length === 0) {
-        heroTargets = getTextTargets(heroText, width, height, count, {
+        heroTargets = getTextTargets(heroText, width, height, {
           variant: "hero",
         });
       }
@@ -647,15 +816,9 @@ export default function ParticleTitle({ introText, heroText, titleId }: Props) {
       }
 
       if (particles.length === 0) {
-        particles = Array.from({ length: count }, () =>
+        particles = Array.from({ length: domainTargets.length }, () =>
           getPageEdgeSpawn(width, height),
         );
-      } else if (particles.length > count) {
-        particles = particles.slice(0, count);
-      } else {
-        while (particles.length < count) {
-          particles.push(getPageEdgeSpawn(width, height));
-        }
       }
 
       if (state === "page-ready") {
@@ -664,13 +827,13 @@ export default function ParticleTitle({ introText, heroText, titleId }: Props) {
         return;
       }
 
-      assignTargets(
+      reconcileParticlesToTargets(
         particles,
         state === "forming-hero" ? heroTargets : domainTargets,
+        { force: state === "domain-settled" },
       );
 
       if (state === "domain-settled") {
-        lockParticlesToTargets(particles);
         draw();
         return;
       }
@@ -702,21 +865,24 @@ export default function ParticleTitle({ introText, heroText, titleId }: Props) {
       gradient.addColorStop(1, accentColor);
 
       particleContext.fillStyle = gradient;
-      particleContext.globalAlpha = 0.94;
-      particleContext.beginPath();
-
       const radius = width < 520 ? 1.35 : 1.65;
       const scroll = getScrollOffset();
 
       for (const particle of particles) {
         const x = particle.x - scroll.x;
         const y = particle.y - scroll.y;
+        const particleRadius = radius * particle.scale;
 
-        particleContext.moveTo(x + radius, y);
-        particleContext.arc(x, y, radius, 0, Math.PI * 2);
+        if (particle.opacity <= 0.02 || particleRadius <= 0.05) {
+          continue;
+        }
+
+        particleContext.globalAlpha = 0.94 * particle.opacity;
+        particleContext.beginPath();
+        particleContext.arc(x, y, particleRadius, 0, Math.PI * 2);
+        particleContext.fill();
       }
 
-      particleContext.fill();
       particleContext.globalAlpha = 1;
     }
 
@@ -734,6 +900,8 @@ export default function ParticleTitle({ introText, heroText, titleId }: Props) {
       }
 
       let settledCount = 0;
+      let settlingCount = 0;
+      let hasLifecycleMotion = false;
       const spring = state === "forming-domain" ? 0.014 : 0.018;
       const damping = state === "forming-domain" ? 0.878 : 0.865;
 
@@ -748,17 +916,58 @@ export default function ParticleTitle({ introText, heroText, titleId }: Props) {
 
         const distance = Math.hypot(dx, dy);
         const speed = Math.hypot(particle.vx, particle.vy);
+        const isSettled = distance < SETTLE_DISTANCE && speed < SETTLE_SPEED;
 
-        if (distance < SETTLE_DISTANCE && speed < SETTLE_SPEED) {
+        if (isSettled) {
           particle.x = particle.tx;
           particle.y = particle.ty;
           particle.vx = 0;
           particle.vy = 0;
+        }
+
+        if (particle.mode === "born") {
+          particle.opacity = Math.min(1, particle.opacity + 0.045);
+          particle.scale = Math.min(1, particle.scale + 0.052);
+
+          if (particle.opacity >= 1 && particle.scale >= 1) {
+            particle.mode = "active";
+          } else {
+            hasLifecycleMotion = true;
+          }
+        } else if (particle.mode === "retiring") {
+          if (distance < 9 || isSettled) {
+            particle.opacity = Math.max(0, particle.opacity - 0.075);
+            particle.scale = Math.max(0, particle.scale - 0.06);
+          }
+
+          if (particle.opacity > 0.02 && particle.scale > 0.04) {
+            hasLifecycleMotion = true;
+          }
+        }
+
+        if (particle.mode !== "retiring") {
+          settlingCount += 1;
+        }
+
+        if (isSettled && particle.mode !== "retiring") {
           settledCount += 1;
         }
       }
 
-      if (settledCount / particles.length > 0.96) {
+      particles = particles.filter(
+        (particle) =>
+          particle.mode !== "retiring" ||
+          (particle.opacity > 0.02 && particle.scale > 0.04),
+      );
+
+      if (particles.length === 0) {
+        return;
+      }
+
+      const settledRatio =
+        settlingCount === 0 ? 1 : Math.min(1, settledCount / settlingCount);
+
+      if (settledRatio > 0.96) {
         settledFrames += 1;
       } else {
         settledFrames = 0;
@@ -787,7 +996,6 @@ export default function ParticleTitle({ introText, heroText, titleId }: Props) {
 
       draw();
 
-      const settledRatio = settledCount / particles.length;
       const needsStateTransition =
         (state === "forming-domain" || state === "forming-hero") &&
         settledFrames <= 12;
@@ -796,7 +1004,10 @@ export default function ParticleTitle({ introText, heroText, titleId }: Props) {
 
       if (
         state !== "domain-settled" &&
-        (needsStateTransition || needsPageLock || settledRatio < 1)
+        (needsStateTransition ||
+          needsPageLock ||
+          hasLifecycleMotion ||
+          settledRatio < 1)
       ) {
         scheduleTick();
       }
