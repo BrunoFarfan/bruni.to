@@ -1,21 +1,218 @@
 ---
 import Layout from "../layouts/Layout.astro";
-import ScrollShowcase from "../components/ScrollShowcase";
-import { homeShowcaseItems } from "../data/projects";
+import ParticleTitle from "../components/ParticleTitle";
+import { labProjects, workProjects } from "../data/projects";
+
+const contactLinks = [
+    {
+        href: "mailto:bruno.farfan.miquel@uc.cl",
+        label: "Email",
+        ariaLabel: "Email Bruno Farfan Miquel",
+    },
+    {
+        href: "https://github.com/BrunoFarfan",
+        label: "GitHub",
+        ariaLabel: "Open GitHub in a new tab",
+    },
+    {
+        href: "https://www.linkedin.com/in/bruno-farfan-miquel",
+        label: "LinkedIn",
+        ariaLabel: "Open LinkedIn in a new tab",
+    },
+];
 ---
 
 <Layout
     title="Bruno Farfan Miquel"
     description="A personal portfolio for selected work, technical experiments, and notes across AI, automation, document intelligence, and software engineering."
 >
-    <section class="hero">
-        <div class="container">
-            <h1>From notebook experiments to systems people rely on</h1>
-            <p class="lead">
-                I'm Bruno, a builder who moves between data science experimentation and production software engineering. This portfolio collects professional work and personal experiments that reflect that range: from notebooks to systems in production.
+    <script is:inline>
+        try {
+            document.documentElement.dataset.homeReveal = window.matchMedia(
+                "(prefers-reduced-motion: reduce)",
+            ).matches
+                ? "ready"
+                : "intro";
+        } catch {
+            document.documentElement.dataset.homeReveal = "ready";
+        }
+    </script>
+
+    <section class="home-hero" aria-labelledby="home-title">
+        <div class="container home-hero__inner">
+            <p class="home-hero__kicker">Bruno Farfan Miquel</p>
+            <ParticleTitle
+                client:load
+                introText="bruni.to"
+                heroText="From experiments to systems"
+                titleId="home-title"
+            />
+            <p class="home-hero__lead">
+                I move between data science experimentation and production software engineering, building AI automation, scraping systems, document workflows, and practical tools that survive contact with real users.
             </p>
+            <div class="home-hero__links" aria-label="Primary links">
+                {
+                    contactLinks.map((link) => (
+                        <a
+                            class="external-text-link"
+                            href={link.href}
+                            target={link.href.startsWith("mailto:") ? undefined : "_blank"}
+                            rel={link.href.startsWith("mailto:") ? undefined : "noreferrer"}
+                            aria-label={link.ariaLabel}
+                        >
+                            <span>{link.label}</span>
+                            <svg
+                                viewBox="0 0 24 24"
+                                aria-hidden="true"
+                                focusable="false"
+                            >
+                                <path d="M7 17 17 7" />
+                                <path d="M9 7h8v8" />
+                            </svg>
+                        </a>
+                    ))
+                }
+            </div>
         </div>
     </section>
 
-    <ScrollShowcase client:load items={homeShowcaseItems} />
+    <div class="home-content">
+        <section class="home-index-section" aria-labelledby="work-title">
+            <div class="container">
+                <div class="home-section-heading">
+                    <h2
+                        id="work-title"
+                        class="particle-section-title"
+                        data-particle-title="Work"
+                    >
+                        Work
+                    </h2>
+                </div>
+
+                <div class="home-project-list">
+                    {
+                        workProjects.map((project, index) => (
+                            <article class="home-project">
+                                <div class="home-project__main">
+                                    <span class="home-project__number">
+                                        {String(index + 1).padStart(2, "0")}
+                                    </span>
+                                    <span class="home-project__content">
+                                        <span class="home-project__meta">
+                                            {project.status}
+                                        </span>
+                                        <a
+                                            class="page-title-link home-project__title-link"
+                                            href={project.externalUrl}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            aria-label={project.externalLabel}
+                                        >
+                                            <span>{project.title}</span>
+                                            <svg
+                                                viewBox="0 0 24 24"
+                                                aria-hidden="true"
+                                                focusable="false"
+                                            >
+                                                <path d="M7 17 17 7" />
+                                                <path d="M9 7h8v8" />
+                                            </svg>
+                                        </a>
+                                        <span class="home-project__summary">
+                                            {project.summary}
+                                        </span>
+                                        <span class="home-project__detail-heading">
+                                            {project.detailHeading}
+                                        </span>
+                                        <span class="home-project__details">
+                                            {project.details.map((detail) => (
+                                                <p>{detail}</p>
+                                            ))}
+                                        </span>
+                                    </span>
+                                </div>
+                                <ul
+                                    class="tag-list home-project__tags"
+                                    aria-label={`${project.title} topics`}
+                                >
+                                    {project.tags.map((tag) => (
+                                        <li class="tag-list__item">{tag}</li>
+                                    ))}
+                                </ul>
+                            </article>
+                        ))
+                    }
+                </div>
+            </div>
+        </section>
+
+        <section class="home-index-section" aria-labelledby="lab-title">
+            <div class="container">
+                <div class="home-section-heading">
+                    <h2
+                        id="lab-title"
+                        class="particle-section-title"
+                        data-particle-title="Experiments"
+                    >
+                        Experiments
+                    </h2>
+                </div>
+
+                <div class="home-project-list">
+                    {
+                        labProjects.map((project, index) => (
+                            <article class="home-project">
+                                <div class="home-project__main">
+                                    <span class="home-project__number">
+                                        {String(index + 1).padStart(2, "0")}
+                                    </span>
+                                    <span class="home-project__content">
+                                        <span class="home-project__meta">
+                                            {project.status}
+                                        </span>
+                                        <a
+                                            class="page-title-link home-project__title-link"
+                                            href={project.externalUrl}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            aria-label={project.externalLabel}
+                                        >
+                                            <span>{project.title}</span>
+                                            <svg
+                                                viewBox="0 0 24 24"
+                                                aria-hidden="true"
+                                                focusable="false"
+                                            >
+                                                <path d="M7 17 17 7" />
+                                                <path d="M9 7h8v8" />
+                                            </svg>
+                                        </a>
+                                        <span class="home-project__summary">
+                                            {project.summary}
+                                        </span>
+                                        <span class="home-project__detail-heading">
+                                            {project.detailHeading}
+                                        </span>
+                                        <span class="home-project__details">
+                                            {project.details.map((detail) => (
+                                                <p>{detail}</p>
+                                            ))}
+                                        </span>
+                                    </span>
+                                </div>
+                                <ul
+                                    class="tag-list home-project__tags"
+                                    aria-label={`${project.title} topics`}
+                                >
+                                    {project.tags.map((tag) => (
+                                        <li class="tag-list__item">{tag}</li>
+                                    ))}
+                                </ul>
+                            </article>
+                        ))
+                    }
+                </div>
+            </div>
+        </section>
+    </div>
 </Layout>

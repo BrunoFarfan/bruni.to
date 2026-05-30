@@ -1,14 +1,42 @@
 ---
 const year = new Date().getFullYear();
+
+const links = [
+	{
+		href: 'mailto:bruno.farfan.miquel@uc.cl',
+		label: 'Email',
+	},
+	{
+		href: 'https://github.com/BrunoFarfan',
+		label: 'GitHub',
+	},
+	{
+		href: 'https://www.linkedin.com/in/bruno-farfan-miquel',
+		label: 'LinkedIn',
+	},
+];
 ---
 
 <footer class="site-footer">
 	<div class="container site-footer__inner">
 		<p>&copy; {year} Bruno Farfan Miquel</p>
 		<div class="site-footer__links" aria-label="Footer links">
-			<a href="mailto:bruno.farfan.miquel@uc.cl">Email</a>
-			<a href="https://github.com/BrunoFarfan">GitHub</a>
-			<a href="https://www.linkedin.com/in/bruno-farfan-miquel">LinkedIn</a>
+			{
+				links.map((link) => (
+					<a
+						class="external-text-link"
+						href={link.href}
+						target={link.href.startsWith('mailto:') ? undefined : '_blank'}
+						rel={link.href.startsWith('mailto:') ? undefined : 'noreferrer'}
+					>
+						<span>{link.label}</span>
+						<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+							<path d="M7 17 17 7" />
+							<path d="M9 7h8v8" />
+						</svg>
+					</a>
+				))
+			}
 		</div>
 	</div>
 </footer>
