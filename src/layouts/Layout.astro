@@ -1,5 +1,6 @@
 ---
 import Footer from '../components/Footer.astro';
+import ParticleThemeToggle from '../components/ParticleThemeToggle';
 import '../styles/global.css';
 
 interface Props {
@@ -44,6 +45,7 @@ const canonicalUrl = new URL(canonicalPath, Astro.site ?? Astro.url.origin).toSt
 	</head>
 	<body>
 		<a class="skip-link" href="#main">Skip to content</a>
+		<ParticleThemeToggle client:load />
 		<div class="site-shell">
 			<main id="main" class="site-main">
 				<slot />
