@@ -221,7 +221,14 @@ export function createParticleRenderer(
     gl.enableVertexAttribArray(aPosition);
     gl.vertexAttribPointer(aPosition, 2, gl.FLOAT, false, stride, 0);
     gl.enableVertexAttribArray(aSize);
-    gl.vertexAttribPointer(aSize, 1, gl.FLOAT, false, stride, 2 * bytesPerFloat);
+    gl.vertexAttribPointer(
+      aSize,
+      1,
+      gl.FLOAT,
+      false,
+      stride,
+      2 * bytesPerFloat,
+    );
     gl.enableVertexAttribArray(aAlpha);
     gl.vertexAttribPointer(
       aAlpha,
@@ -234,9 +241,18 @@ export function createParticleRenderer(
 
     gl.uniform2f(uResolution, cssWidth, cssHeight);
     gl.uniform1f(uPixelRatio, pixelRatio);
-    gl.uniform2f(uGradientStart, options.gradientStart.x, options.gradientStart.y);
+    gl.uniform2f(
+      uGradientStart,
+      options.gradientStart.x,
+      options.gradientStart.y,
+    );
     gl.uniform2f(uGradientEnd, options.gradientEnd.x, options.gradientEnd.y);
-    gl.uniform3f(uAccent, options.accent[0], options.accent[1], options.accent[2]);
+    gl.uniform3f(
+      uAccent,
+      options.accent[0],
+      options.accent[1],
+      options.accent[2],
+    );
     gl.uniform3f(uText, options.text[0], options.text[1], options.text[2]);
 
     gl.drawArrays(gl.POINTS, 0, count);

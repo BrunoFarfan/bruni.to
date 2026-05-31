@@ -460,19 +460,39 @@ html[data-home-reveal="morphing"] .home-hero {
   min-height: 100svh;
 }
 
-/* The page stays fully scrollable during the intro — only the hero kicker is
-   held back so the "bruni.to" splash reads cleanly, then fades in once the
-   hero has morphed into the name. The rest of the page (the
-   "From experiments to systems" section, projects, footer) is present and
-   scrollable from the first frame, so no scroll input is ever hijacked. */
 html[data-home-reveal="intro"] .home-hero__kicker,
-html[data-home-reveal="morphing"] .home-hero__kicker {
+html[data-home-reveal="intro"] .home-hero__body,
+html[data-home-reveal="morphing"] .home-hero__kicker,
+html[data-home-reveal="morphing"] .home-hero__body {
   visibility: hidden;
   opacity: 0;
 }
 
-html[data-home-reveal="ready"] .home-hero__kicker {
+html[data-home-reveal="intro"] .site-footer,
+html[data-home-reveal="morphing"] .site-footer {
+  display: none;
+}
+
+html[data-home-reveal="intro"] .home-content,
+html[data-home-reveal="morphing"] .home-content {
+  height: 0;
+  overflow: hidden;
+  opacity: 0;
+  clip-path: inset(0 0 100% 0);
+  pointer-events: none;
+}
+
+html[data-home-reveal="ready"] .home-hero__kicker,
+html[data-home-reveal="ready"] .home-hero__body {
   animation: home-text-reveal 640ms linear both;
+}
+
+html[data-home-reveal="ready"] .home-content {
+  animation: home-content-reveal 940ms linear both;
+}
+
+html[data-home-reveal="ready"] .site-footer {
+  animation: home-text-reveal 940ms linear 220ms both;
 }
 
 .home-section-heading {

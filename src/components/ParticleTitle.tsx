@@ -7,18 +7,14 @@ import {
   offsetTargets,
   reconcileParticlesToTargets,
 } from "../lib/particles";
-import {
-  type RGB,
-  createParticleRenderer,
-} from "../lib/particleRenderer";
+import { type RGB, createParticleRenderer } from "../lib/particleRenderer";
 
 type Props = {
   introText: string;
   heroText: string;
-  // Optional rapid text sequence the hero morphs through, e.g.
-  // ["bruni.to", "brunito", "brunofarfan", "Bruno Farfán"]. The first entry is
+  // Optional rapid text sequence the hero morphs through. The first entry is
   // what initially forms; the rest are stepped through quickly. Defaults to a
-  // single morph from introText to heroText.
+  // direct morph from introText to heroText.
   morphSteps?: string[];
   titleId?: string;
 };
@@ -39,11 +35,9 @@ type PageTitleTarget = {
 const SETTLE_DISTANCE = 0.75;
 const SETTLE_SPEED = 0.08;
 // How long the intro title ("bruni.to") rests before it automatically begins
-// morphing into the hero name. No scroll/keys are hijacked to trigger it — the
-// page is freely scrollable the whole time.
+// morphing into the hero name.
 const HERO_MORPH_DELAY = 200;
-// Total time spent stepping through the morph sequence
-// (bruni.to → brunito → brunofarfan → Bruno Farfán).
+// Total time spent stepping through the morph sequence.
 const MORPH_SEQUENCE_DURATION = 1000;
 
 function getCircleSpawn(width: number, height: number): Particle {
@@ -153,9 +147,7 @@ export default function ParticleTitle({
     let isFinalMorphReached = false;
     let settledFrames = 0;
     const heroSequence =
-      morphSteps && morphSteps.length > 0
-        ? morphSteps
-        : [introText, heroText];
+      morphSteps && morphSteps.length > 0 ? morphSteps : [introText, heroText];
     const colorParser = document.createElement("canvas");
     colorParser.width = 1;
     colorParser.height = 1;
@@ -769,7 +761,7 @@ export default function ParticleTitle({
       removeSkipListeners();
       particleRenderer.dispose();
     };
-  }, [heroText, introText]);
+  }, [heroText, introText, morphSteps]);
 
   return createElement(
     "div",
