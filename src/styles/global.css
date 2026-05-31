@@ -224,7 +224,7 @@ p {
 
 .home-hero__inner {
   display: grid;
-  gap: clamp(1.2rem, 2.8vw, 2rem);
+  gap: clamp(1.4rem, 3vw, 2.4rem);
 }
 
 .home-hero__kicker {
@@ -238,6 +238,8 @@ p {
 .particle-title {
   position: relative;
   display: grid;
+  width: 100%;
+  justify-items: center;
   min-height: clamp(19rem, 48vw, 34rem);
   align-items: center;
 }
@@ -264,6 +266,7 @@ p {
   font-weight: 780;
   letter-spacing: 0;
   line-height: 0.9;
+  text-align: center;
 }
 
 html[data-home-reveal="intro"] .particle-title__fallback,
@@ -345,17 +348,54 @@ html[data-home-reveal="morphing"] .particle-theme-toggle {
   z-index: 1;
 }
 
+.home-hero__body {
+  display: grid;
+  justify-items: center;
+  gap: clamp(1.1rem, 2.4vw, 1.65rem);
+  margin-inline: auto;
+  max-width: 54ch;
+  text-align: center;
+}
+
+.home-hero__headline {
+  position: relative;
+  max-width: 24ch;
+  margin-top: clamp(0.4rem, 1.4vw, 1rem);
+  padding-top: clamp(1.2rem, 2.2vw, 1.7rem);
+  font-size: clamp(1.5rem, 2.8vw, 2.25rem);
+  font-weight: 760;
+  letter-spacing: -0.015em;
+  line-height: 1.14;
+  text-wrap: balance;
+}
+
+/* Centered accent marker tying the tagline to the name above it. */
+.home-hero__headline::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: clamp(2rem, 4vw, 2.8rem);
+  height: 3px;
+  border-radius: 999px;
+  background: var(--color-accent);
+  transform: translateX(-50%);
+}
+
 .home-hero__lead {
-  max-width: 760px;
+  max-width: 46ch;
   color: var(--color-muted);
-  font-size: clamp(1.06rem, 1.6vw, 1.24rem);
-  line-height: 1.72;
+  font-size: clamp(1.02rem, 1.4vw, 1.18rem);
+  line-height: 1.68;
+  text-wrap: pretty;
 }
 
 .home-hero__links {
   display: flex;
   flex-wrap: wrap;
-  gap: clamp(0.8rem, 2vw, 1.3rem);
+  justify-content: center;
+  gap: clamp(0.9rem, 2.4vw, 1.5rem);
+  margin-top: clamp(0.3rem, 1vw, 0.7rem);
 }
 
 .home-hero__links a {
@@ -420,42 +460,19 @@ html[data-home-reveal="morphing"] .home-hero {
   min-height: 100svh;
 }
 
+/* The page stays fully scrollable during the intro — only the hero kicker is
+   held back so the "bruni.to" splash reads cleanly, then fades in once the
+   hero has morphed into the name. The rest of the page (the
+   "From experiments to systems" section, projects, footer) is present and
+   scrollable from the first frame, so no scroll input is ever hijacked. */
 html[data-home-reveal="intro"] .home-hero__kicker,
-html[data-home-reveal="intro"] .home-hero__lead,
-html[data-home-reveal="intro"] .home-hero__links,
-html[data-home-reveal="morphing"] .home-hero__kicker,
-html[data-home-reveal="morphing"] .home-hero__lead,
-html[data-home-reveal="morphing"] .home-hero__links {
+html[data-home-reveal="morphing"] .home-hero__kicker {
   visibility: hidden;
   opacity: 0;
 }
 
-html[data-home-reveal="intro"] .site-footer,
-html[data-home-reveal="morphing"] .site-footer {
-  display: none;
-}
-
-html[data-home-reveal="intro"] .home-content,
-html[data-home-reveal="morphing"] .home-content {
-  height: 0;
-  overflow: hidden;
-  opacity: 0;
-  clip-path: inset(0 0 100% 0);
-  pointer-events: none;
-}
-
-html[data-home-reveal="ready"] .home-hero__kicker,
-html[data-home-reveal="ready"] .home-hero__lead,
-html[data-home-reveal="ready"] .home-hero__links {
+html[data-home-reveal="ready"] .home-hero__kicker {
   animation: home-text-reveal 640ms linear both;
-}
-
-html[data-home-reveal="ready"] .home-content {
-  animation: home-content-reveal 940ms linear both;
-}
-
-html[data-home-reveal="ready"] .site-footer {
-  animation: home-text-reveal 940ms linear 220ms both;
 }
 
 .home-section-heading {
@@ -662,29 +679,38 @@ html[data-home-reveal="ready"] .site-footer {
 }
 
 @media (max-width: 560px) {
+  /* Hero fits within a single viewport: the name fills the flexible top row,
+     the text block sits in an auto row beneath it, never overflowing. */
   .home-hero {
-    align-items: start;
-    min-height: 114svh;
-    padding-block: 0 clamp(2.5rem, 7svh, 4rem);
+    min-height: 100svh;
+    align-items: stretch;
+    padding-block: clamp(1rem, 4svh, 2rem) clamp(1.5rem, 5svh, 2.75rem);
   }
 
   .home-hero__inner {
-    align-content: start;
-    position: relative;
-    min-height: 114svh;
-    padding-top: 76svh;
+    gap: clamp(0.6rem, 2svh, 1.2rem);
+    min-height: 100svh;
+    align-content: center;
   }
 
   .particle-title {
-    position: absolute;
-    inset: 0 0 auto;
-    height: 100svh;
-    min-height: 100svh;
+    min-height: clamp(11rem, 30svh, 16rem);
+    height: auto;
   }
 
-  .home-hero__kicker {
-    position: absolute;
-    inset: max(1.35rem, env(safe-area-inset-top)) 0 auto;
+  .home-hero__body {
+    gap: clamp(0.7rem, 2svh, 1.2rem);
+  }
+
+  .home-hero__headline {
+    margin-top: 0;
+    padding-top: clamp(0.9rem, 2.4svh, 1.4rem);
+    font-size: clamp(1.4rem, 6.4vw, 1.9rem);
+  }
+
+  .home-hero__lead {
+    font-size: clamp(0.95rem, 3.8vw, 1.08rem);
+    line-height: 1.6;
   }
 
   .home-project__main {

@@ -40,43 +40,51 @@ const contactLinks = [
 
     <section class="home-hero" aria-labelledby="home-title">
         <div class="container home-hero__inner">
-            <p class="home-hero__kicker">Bruno Farfan Miquel</p>
             <ParticleTitle
                 client:load
                 introText="bruni.to"
-                heroText="From experiments to systems"
+                heroText="Bruno Farfán"
+                morphSteps={["bruni.to", "brunito", "brunitofarfan", "Bruno Farfán"]}
                 titleId="home-title"
             />
-            <p class="home-hero__lead">
-                I move between data science experimentation and production software engineering, building AI automation, scraping systems, document workflows, and practical tools that survive contact with real users.
-            </p>
-            <div class="home-hero__links" aria-label="Primary links">
-                {
-                    contactLinks.map((link) => (
-                        <a
-                            class="external-text-link"
-                            href={link.href}
-                            target={link.href.startsWith("mailto:") ? undefined : "_blank"}
-                            rel={link.href.startsWith("mailto:") ? undefined : "noreferrer"}
-                            aria-label={link.ariaLabel}
-                        >
-                            <span>{link.label}</span>
-                            <svg
-                                viewBox="0 0 24 24"
-                                aria-hidden="true"
-                                focusable="false"
+            <div class="home-hero__body">
+                <h2 id="intro-title" class="home-hero__headline">
+                    AI that ships
+                </h2>
+                <p class="home-hero__lead">
+                    Data scientist and software engineer. I build AI
+                    automation, scraping systems, and document tools that
+                    survive real users.
+                </p>
+                <div class="home-hero__links" aria-label="Primary links">
+                    {
+                        contactLinks.map((link) => (
+                            <a
+                                class="external-text-link"
+                                href={link.href}
+                                target={link.href.startsWith("mailto:") ? undefined : "_blank"}
+                                rel={link.href.startsWith("mailto:") ? undefined : "noreferrer"}
+                                aria-label={link.ariaLabel}
                             >
-                                <path d="M7 17 17 7" />
-                                <path d="M9 7h8v8" />
-                            </svg>
-                        </a>
-                    ))
-                }
+                                <span>{link.label}</span>
+                                <svg
+                                    viewBox="0 0 24 24"
+                                    aria-hidden="true"
+                                    focusable="false"
+                                >
+                                    <path d="M7 17 17 7" />
+                                    <path d="M9 7h8v8" />
+                                </svg>
+                            </a>
+                        ))
+                    }
+                </div>
             </div>
         </div>
     </section>
 
     <div class="home-content">
+
         <section class="home-index-section" aria-labelledby="work-title">
             <div class="container">
                 <div class="home-section-heading">

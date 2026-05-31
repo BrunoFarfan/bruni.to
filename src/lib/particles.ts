@@ -510,6 +510,8 @@ export function getTextTargets(
   const textHeight = (lines.length - 1) * lineHeight + ascent + descent;
   const firstBaseline = height / 2 - textHeight / 2 + ascent;
 
+  let widestLine = 0;
+
   lines.forEach((line, index) => {
     const x =
       options.align === "left"
@@ -517,17 +519,51 @@ export function getTextTargets(
         : options.align === "right"
           ? width
           : width / 2;
+    widestLine = Math.max(widestLine, context.measureText(line).width);
     context.fillText(line, x, firstBaseline + index * lineHeight);
   });
 
-  const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+  // Only scan the rectangle the text actually occupies instead of the whole
+  // viewport-sized canvas — getImageData and the per-pixel loop dominate the
+  // one-time cost, and the ink covers a small fraction of the canvas.
+  const horizontalPad = fontSize * 0.4;
+  const verticalPad = fontSize * 0.3;
+  const inkLeft =
+    options.align === "left"
+      ? 0
+      : options.align === "right"
+        ? width - widestLine
+        : width / 2 - widestLine / 2;
+  const lastBaseline = firstBaseline + (lines.length - 1) * lineHeight;
+  const scanLeft = Math.max(0, Math.floor(inkLeft - horizontalPad));
+  const scanRight = Math.min(
+    canvas.width,
+    Math.ceil(inkLeft + widestLine + horizontalPad),
+  );
+  const scanTop = Math.max(0, Math.floor(firstBaseline - ascent - verticalPad));
+  const scanBottom = Math.min(
+    canvas.height,
+    Math.ceil(lastBaseline + descent + verticalPad),
+  );
+  const scanWidth = Math.max(1, scanRight - scanLeft);
+  const scanHeight = Math.max(1, scanBottom - scanTop);
+
+  const pixels = context.getImageData(
+    scanLeft,
+    scanTop,
+    scanWidth,
+    scanHeight,
+  ).data;
   const samples: MaskSample[] = [];
   let coreInkPixels = 0;
   let weightedInkPixels = 0;
 
-  for (let y = 0; y < canvas.height; y += 1) {
-    for (let x = 0; x < canvas.width; x += 1) {
-      const alpha = pixels[(y * canvas.width + x) * 4 + 3];
+  for (let row = 0; row < scanHeight; row += 1) {
+    const y = scanTop + row;
+
+    for (let col = 0; col < scanWidth; col += 1) {
+      const x = scanLeft + col;
+      const alpha = pixels[(row * scanWidth + col) * 4 + 3];
 
       if (alpha > CORE_ALPHA_THRESHOLD) {
         coreInkPixels += 1;
