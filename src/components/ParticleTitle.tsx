@@ -34,6 +34,8 @@ type PageTitleTarget = {
 
 const SETTLE_DISTANCE = 0.75;
 const SETTLE_SPEED = 0.08;
+const POINTER_REPULSION_RADIUS = 86;
+const POINTER_REPULSION_FORCE = 3.8;
 // How long the intro title ("bruni.to") rests before it automatically begins
 // morphing into the hero name.
 const HERO_MORPH_DELAY = 700;
@@ -146,6 +148,13 @@ export default function ParticleTitle({
     let morphStepTimers: number[] = [];
     let isFinalMorphReached = false;
     let settledFrames = 0;
+    const pointer = {
+      active: false,
+      clientX: 0,
+      clientY: 0,
+      x: 0,
+      y: 0,
+    };
     const heroSequence =
       morphSteps && morphSteps.length > 0 ? morphSteps : [introText, heroText];
     const colorParser = document.createElement("canvas");
@@ -439,11 +448,42 @@ export default function ParticleTitle({
     }
 
     function handleScroll() {
+      syncPointerWithScroll();
       retargetToPageTitle();
 
       if (state === "page-ready" && isPageTargetSettled) {
         draw();
       }
+    }
+
+    function syncPointerWithScroll() {
+      if (!pointer.active) {
+        return;
+      }
+
+      pointer.x = pointer.clientX + window.scrollX;
+      pointer.y = pointer.clientY + window.scrollY;
+    }
+
+    function handlePointerMove(event: PointerEvent) {
+      if (event.pointerType === "touch") {
+        return;
+      }
+
+      pointer.active = true;
+      pointer.clientX = event.clientX;
+      pointer.clientY = event.clientY;
+      syncPointerWithScroll();
+      scheduleTick();
+    }
+
+    function clearPointer() {
+      if (!pointer.active) {
+        return;
+      }
+
+      pointer.active = false;
+      scheduleTick();
     }
 
     function parseColor(value: string): RGB {
@@ -583,21 +623,49 @@ export default function ParticleTitle({
       let settledCount = 0;
       let settlingCount = 0;
       let hasLifecycleMotion = false;
+      let hasPointerMotion = false;
       const spring = state === "forming-domain" ? 0.014 : 0.018;
       const damping = state === "forming-domain" ? 0.878 : 0.865;
+      const repulsionRadius =
+        width < 520
+          ? POINTER_REPULSION_RADIUS * 0.72
+          : POINTER_REPULSION_RADIUS;
 
       for (const particle of particles) {
         const dx = particle.tx - particle.x;
         const dy = particle.ty - particle.y;
+        let nextVx = particle.vx + dx * spring;
+        let nextVy = particle.vy + dy * spring;
+        let wasRepelled = false;
 
-        particle.vx = (particle.vx + dx * spring) * damping;
-        particle.vy = (particle.vy + dy * spring) * damping;
+        if (pointer.active && particle.mode !== "retiring") {
+          const pointerDx = particle.x - pointer.x;
+          const pointerDy = particle.y - pointer.y;
+          const pointerDistance = Math.hypot(pointerDx, pointerDy);
+
+          if (pointerDistance > 0.001 && pointerDistance < repulsionRadius) {
+            const falloff = 1 - pointerDistance / repulsionRadius;
+            const force = falloff * falloff * POINTER_REPULSION_FORCE;
+
+            nextVx += (pointerDx / pointerDistance) * force;
+            nextVy += (pointerDy / pointerDistance) * force;
+            wasRepelled = true;
+            hasPointerMotion = true;
+          }
+        }
+
+        particle.vx = nextVx * damping;
+        particle.vy = nextVy * damping;
         particle.x += particle.vx;
         particle.y += particle.vy;
 
-        const distance = Math.hypot(dx, dy);
+        const distance = Math.hypot(
+          particle.tx - particle.x,
+          particle.ty - particle.y,
+        );
         const speed = Math.hypot(particle.vx, particle.vy);
-        const isSettled = distance < SETTLE_DISTANCE && speed < SETTLE_SPEED;
+        const isSettled =
+          !wasRepelled && distance < SETTLE_DISTANCE && speed < SETTLE_SPEED;
 
         if (isSettled) {
           particle.x = particle.tx;
@@ -681,13 +749,17 @@ export default function ParticleTitle({
         settledFrames <= 12;
       const needsPageLock =
         state === "page-ready" && !isPageTargetSettled && settledFrames <= 12;
+      const needsPointerReturn =
+        state === "domain-settled" && (hasPointerMotion || settledRatio < 1);
 
       if (
-        state !== "domain-settled" &&
-        (needsStateTransition ||
-          needsPageLock ||
-          hasLifecycleMotion ||
-          settledRatio < 1)
+        needsPointerReturn ||
+        (state !== "domain-settled" &&
+          (needsStateTransition ||
+            needsPageLock ||
+            hasLifecycleMotion ||
+            hasPointerMotion ||
+            settledRatio < 1))
       ) {
         scheduleTick();
       }
@@ -698,6 +770,11 @@ export default function ParticleTitle({
 
     window.addEventListener("resize", resize);
     window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("pointermove", handlePointerMove, {
+      passive: true,
+    });
+    window.addEventListener("pointerleave", clearPointer);
+    window.addEventListener("blur", clearPointer);
     window.addEventListener("particle-theme-change", handleThemeChange);
 
     return () => {
@@ -708,6 +785,9 @@ export default function ParticleTitle({
       delete document.documentElement.dataset.particlePage;
       window.removeEventListener("resize", resize);
       window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerleave", clearPointer);
+      window.removeEventListener("blur", clearPointer);
       window.removeEventListener("particle-theme-change", handleThemeChange);
       particleRenderer.dispose();
     };
