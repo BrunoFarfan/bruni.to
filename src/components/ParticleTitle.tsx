@@ -234,10 +234,15 @@ export default function ParticleTitle({
     function getTargetsForElement(target: PageTitleTarget) {
       const rect = target.element.getBoundingClientRect();
       const scroll = getScrollOffset();
+      const heroOffsetY =
+        target.id === "hero" && target.variant === "hero" && width > 560
+          ? Math.min(34, Math.max(22, height * 0.032))
+          : 0;
+
       return offsetTargets(
         getLocalTargetsForElement(target),
         rect.left + scroll.x,
-        rect.top + scroll.y,
+        rect.top + scroll.y + heroOffsetY,
       );
     }
 
