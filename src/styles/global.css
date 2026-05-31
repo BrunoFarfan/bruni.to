@@ -698,6 +698,12 @@ html[data-home-reveal="ready"] .site-footer {
   }
 }
 
+@media (min-width: 561px) {
+  .particle-title {
+    transform: translateY(clamp(3rem, 8svh, 6rem));
+  }
+}
+
 @media (max-width: 560px) {
   /* Hero fits within a single viewport: the name fills the flexible top row,
      the text block sits in an auto row beneath it, never overflowing. */
