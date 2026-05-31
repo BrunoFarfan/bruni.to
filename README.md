@@ -1,4 +1,4 @@
-# Bruno Farfan Miquel Portfolio Scaffold
+# Bruno Farfán Miquel Portfolio Scaffold
 
 A lightweight Astro, React, and TypeScript personal portfolio scaffold.
 
