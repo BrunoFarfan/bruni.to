@@ -7,10 +7,19 @@ import {
   offsetTargets,
   reconcileParticlesToTargets,
 } from "../lib/particles";
+import {
+  type RGB,
+  createParticleRenderer,
+} from "../lib/particleRenderer";
 
 type Props = {
   introText: string;
   heroText: string;
+  // Optional rapid text sequence the hero morphs through, e.g.
+  // ["bruni.to", "brunito", "brunofarfan", "Bruno Farfán"]. The first entry is
+  // what initially forms; the rest are stepped through quickly. Defaults to a
+  // single morph from introText to heroText.
+  morphSteps?: string[];
   titleId?: string;
 };
 
@@ -29,7 +38,13 @@ type PageTitleTarget = {
 
 const SETTLE_DISTANCE = 0.75;
 const SETTLE_SPEED = 0.08;
-const POST_DOMAIN_INPUT_DELAY = 350;
+// How long the intro title ("bruni.to") rests before it automatically begins
+// morphing into the hero name. No scroll/keys are hijacked to trigger it — the
+// page is freely scrollable the whole time.
+const HERO_MORPH_DELAY = 200;
+// Total time spent stepping through the morph sequence
+// (bruni.to → brunito → brunofarfan → Bruno Farfán).
+const MORPH_SEQUENCE_DURATION = 1000;
 
 function getCircleSpawn(width: number, height: number): Particle {
   const angle = Math.random() * Math.PI * 2;
@@ -78,7 +93,12 @@ function parsePixels(value: string, fallback: number) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
-export default function ParticleTitle({ introText, heroText, titleId }: Props) {
+export default function ParticleTitle({
+  introText,
+  heroText,
+  morphSteps,
+  titleId,
+}: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isEnhanced, setIsEnhanced] = useState(false);
 
@@ -98,17 +118,21 @@ export default function ParticleTitle({ introText, heroText, titleId }: Props) {
       return;
     }
 
-    const context = canvas.getContext("2d");
+    const renderer = createParticleRenderer(canvas);
 
-    if (!context) {
+    if (!renderer) {
+      // No WebGL: reveal the static title instead of leaving it hidden behind
+      // the "intro" reveal state set by the inline page script.
+      document.documentElement.dataset.homeReveal = "ready";
       setIsEnhanced(false);
       return;
     }
 
     const particleCanvas = canvas;
     const particleHost = host;
-    const particleContext = context;
+    const particleRenderer = renderer;
     const targetCache = new Map<string, Point[]>();
+    const colorCache = new Map<string, RGB>();
 
     document.documentElement.dataset.homeReveal = "intro";
     document.documentElement.dataset.particlePage = "enhanced";
@@ -124,10 +148,20 @@ export default function ParticleTitle({ introText, heroText, titleId }: Props) {
     let activePageTargetId = "hero";
     let isPageTargetSettled = false;
     let state: MotionState = "forming-domain";
-    let canTriggerHeroMorph = false;
-    let domainSettledAt = 0;
-    let triggerDelay = 0;
+    let heroMorphTimer = 0;
+    let morphStepTimers: number[] = [];
+    let isFinalMorphReached = false;
     let settledFrames = 0;
+    const heroSequence =
+      morphSteps && morphSteps.length > 0
+        ? morphSteps
+        : [introText, heroText];
+    const colorParser = document.createElement("canvas");
+    colorParser.width = 1;
+    colorParser.height = 1;
+    const colorParserContext = colorParser.getContext("2d", {
+      willReadFrequently: true,
+    });
 
     function readThemeColor(name: string, fallback: string) {
       return (
@@ -351,6 +385,22 @@ export default function ParticleTitle({ introText, heroText, titleId }: Props) {
       isPageTargetSettled = true;
     }
 
+    function getHeroTargetsForText(text: string) {
+      // The final step lands exactly on the hero page-target (so page-ready
+      // scroll-tracking starts without a jump); intermediate steps are sized
+      // and positioned identically, just with different text.
+      if (text === heroText) {
+        return heroTargets;
+      }
+
+      return getTargetsForElement({
+        element: particleHost,
+        id: "hero",
+        text,
+        variant: "hero",
+      });
+    }
+
     function startHeroMorph() {
       if (state === "forming-hero" || state === "page-ready") {
         return;
@@ -359,40 +409,63 @@ export default function ParticleTitle({ introText, heroText, titleId }: Props) {
       state = "forming-hero";
       document.documentElement.dataset.homeReveal = "morphing";
       settledFrames = 0;
-      reconcileParticlesToTargets(particles, heroTargets, { shuffle: true });
+      isFinalMorphReached = false;
 
-      const scroll = getScrollOffset();
-      particles.forEach((particle) => {
-        const angle =
-          Math.atan2(
-            particle.y - (scroll.y + height / 2),
-            particle.x - (scroll.x + width / 2),
-          ) +
-          (Math.random() - 0.5) * 0.8;
-        const force = 4.4 + Math.random() * 6.8;
+      // The first entry of the sequence is already on screen, so step through
+      // the rest quickly, spacing the transitions so the whole sequence lands
+      // within MORPH_SEQUENCE_DURATION.
+      const steps = heroSequence.slice(1);
+      const interval = MORPH_SEQUENCE_DURATION / Math.max(1, steps.length);
 
-        particle.vx += Math.cos(angle) * force;
-        particle.vy += Math.sin(angle) * force;
+      steps.forEach((text, index) => {
+        const isFinalStep = index === steps.length - 1;
+        const timer = window.setTimeout(
+          () => {
+            const targets = getHeroTargetsForText(text);
+
+            if (targets.length === 0) {
+              return;
+            }
+
+            if (isFinalStep) {
+              isFinalMorphReached = true;
+            }
+
+            reconcileParticlesToTargets(particles, targets, { shuffle: true });
+            scheduleTick();
+          },
+          Math.round(interval * index),
+        );
+
+        morphStepTimers.push(timer);
       });
-
-      scheduleTick();
     }
 
-    function requestHeroMorphFromIntent() {
-      if (
-        state === "domain-settled" &&
-        canTriggerHeroMorph &&
-        performance.now() - domainSettledAt >= POST_DOMAIN_INPUT_DELAY
-      ) {
-        startHeroMorph();
-      }
-    }
-
-    function handleIntentInput(event: Event) {
+    function skipToFinalForm() {
       if (state === "page-ready") {
         return;
       }
 
+      // Any user interaction during the intro cancels the remaining steps and
+      // morphs the dots straight to the final hero name — keeping the particle
+      // animation, just skipping the intermediate words. Once it settles, tick
+      // hands off to normal scroll-tracking.
+      window.clearTimeout(heroMorphTimer);
+      morphStepTimers.forEach((timer) => window.clearTimeout(timer));
+      morphStepTimers = [];
+      isFinalMorphReached = true;
+      settledFrames = 0;
+      state = "forming-hero";
+      document.documentElement.dataset.homeReveal = "morphing";
+
+      if (heroTargets.length > 0) {
+        reconcileParticlesToTargets(particles, heroTargets, { shuffle: true });
+      }
+
+      scheduleTick();
+    }
+
+    function handleSkipIntent(event: Event) {
       if (
         event instanceof KeyboardEvent &&
         (event.metaKey || event.ctrlKey || event.altKey)
@@ -400,7 +473,24 @@ export default function ParticleTitle({ introText, heroText, titleId }: Props) {
         return;
       }
 
-      requestHeroMorphFromIntent();
+      skipToFinalForm();
+      removeSkipListeners();
+    }
+
+    function addSkipListeners() {
+      window.addEventListener("wheel", handleSkipIntent, { passive: true });
+      window.addEventListener("touchstart", handleSkipIntent, {
+        passive: true,
+      });
+      window.addEventListener("pointerdown", handleSkipIntent);
+      window.addEventListener("keydown", handleSkipIntent);
+    }
+
+    function removeSkipListeners() {
+      window.removeEventListener("wheel", handleSkipIntent);
+      window.removeEventListener("touchstart", handleSkipIntent);
+      window.removeEventListener("pointerdown", handleSkipIntent);
+      window.removeEventListener("keydown", handleSkipIntent);
     }
 
     function handleScroll() {
@@ -411,7 +501,30 @@ export default function ParticleTitle({ introText, heroText, titleId }: Props) {
       }
     }
 
+    function parseColor(value: string): RGB {
+      const cached = colorCache.get(value);
+
+      if (cached) {
+        return cached;
+      }
+
+      let rgb: RGB = [0.14, 0.12, 0.1];
+
+      if (colorParserContext) {
+        colorParserContext.clearRect(0, 0, 1, 1);
+        colorParserContext.fillStyle = "#000";
+        colorParserContext.fillStyle = value;
+        colorParserContext.fillRect(0, 0, 1, 1);
+        const [r, g, b] = colorParserContext.getImageData(0, 0, 1, 1).data;
+        rgb = [r / 255, g / 255, b / 255];
+      }
+
+      colorCache.set(value, rgb);
+      return rgb;
+    }
+
     function handleThemeChange() {
+      colorCache.clear();
       if (particles.length > 0) {
         draw();
       }
@@ -427,6 +540,7 @@ export default function ParticleTitle({ introText, heroText, titleId }: Props) {
       particleCanvas.height = Math.floor(height * pixelRatio);
       particleCanvas.style.width = `${width}px`;
       particleCanvas.style.height = `${height}px`;
+      particleRenderer.resize(width, height, pixelRatio);
 
       const heroTarget: PageTitleTarget = {
         element: particleHost,
@@ -435,14 +549,26 @@ export default function ParticleTitle({ introText, heroText, titleId }: Props) {
         variant: "hero",
       };
 
-      domainTargets = getTextTargets(introText, width, height, {
-        variant: "domain",
-      });
-      domainTargets = offsetTargets(
-        domainTargets,
-        window.scrollX,
-        window.scrollY,
-      );
+      // Form the intro word at the hero's host position (same size/spot the
+      // morph sequence lands on) instead of the center of the viewport, so it
+      // never floats below the final landing position.
+      const introTarget: PageTitleTarget = {
+        element: particleHost,
+        id: "hero",
+        text: introText,
+        variant: "hero",
+      };
+
+      domainTargets = getTargetsForElement(introTarget);
+
+      if (domainTargets.length === 0) {
+        domainTargets = offsetTargets(
+          getTextTargets(introText, width, height, { variant: "hero" }),
+          window.scrollX,
+          window.scrollY,
+        );
+      }
+
       heroTargets = getTargetsForElement(heroTarget);
 
       if (heroTargets.length === 0) {
@@ -482,48 +608,18 @@ export default function ParticleTitle({ introText, heroText, titleId }: Props) {
     }
 
     function draw() {
-      particleContext.setTransform(1, 0, 0, 1, 0, 0);
-      particleContext.clearRect(
-        0,
-        0,
-        particleCanvas.width,
-        particleCanvas.height,
-      );
-      particleContext.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
-
-      const textColor = readThemeColor("--color-text", "#241f1b");
-      const accentColor = readThemeColor("--color-accent-strong", "#343aa5");
-      const gradient = particleContext.createLinearGradient(
-        width * 0.16,
-        height * 0.28,
-        width * 0.84,
-        height * 0.76,
-      );
-
-      gradient.addColorStop(0, accentColor);
-      gradient.addColorStop(0.46, textColor);
-      gradient.addColorStop(1, accentColor);
-
-      particleContext.fillStyle = gradient;
-      const radius = width < 520 ? 1.35 : 1.65;
       const scroll = getScrollOffset();
+      const radius = width < 520 ? 1.35 : 1.65;
 
-      for (const particle of particles) {
-        const x = particle.x - scroll.x;
-        const y = particle.y - scroll.y;
-        const particleRadius = radius * particle.scale;
-
-        if (particle.opacity <= 0.02 || particleRadius <= 0.05) {
-          continue;
-        }
-
-        particleContext.globalAlpha = 0.94 * particle.opacity;
-        particleContext.beginPath();
-        particleContext.arc(x, y, particleRadius, 0, Math.PI * 2);
-        particleContext.fill();
-      }
-
-      particleContext.globalAlpha = 1;
+      particleRenderer.draw(particles, {
+        scrollX: scroll.x,
+        scrollY: scroll.y,
+        baseRadius: radius,
+        text: parseColor(readThemeColor("--color-text", "#241f1b")),
+        accent: parseColor(readThemeColor("--color-accent-strong", "#343aa5")),
+        gradientStart: { x: width * 0.16, y: height * 0.28 },
+        gradientEnd: { x: width * 0.84, y: height * 0.76 },
+      });
     }
 
     function scheduleTick() {
@@ -617,17 +713,17 @@ export default function ParticleTitle({ introText, heroText, titleId }: Props) {
         if (state === "forming-domain") {
           state = "domain-settled";
           settledFrames = 0;
-          domainSettledAt = performance.now();
-          canTriggerHeroMorph = false;
-          triggerDelay = window.setTimeout(() => {
-            canTriggerHeroMorph = true;
-          }, POST_DOMAIN_INPUT_DELAY);
-        } else if (state === "forming-hero") {
+          heroMorphTimer = window.setTimeout(startHeroMorph, HERO_MORPH_DELAY);
+        } else if (state === "forming-hero" && isFinalMorphReached) {
           state = "page-ready";
           activePageTargetId = "hero";
           isPageTargetSettled = false;
+          settledFrames = 0;
           document.documentElement.dataset.homeReveal = "ready";
-          retargetToPageTitle({ force: true });
+          removeSkipListeners();
+          // Animate to whatever title is now in view (e.g. the user scrolled to
+          // Work during the intro) instead of teleporting onto it.
+          retargetToPageTitle();
         } else if (state === "page-ready") {
           lockCurrentPageTarget();
           settledFrames = 0;
@@ -659,25 +755,19 @@ export default function ParticleTitle({ introText, heroText, titleId }: Props) {
     window.addEventListener("resize", resize);
     window.addEventListener("scroll", handleScroll, { passive: true });
     window.addEventListener("particle-theme-change", handleThemeChange);
-    window.addEventListener("wheel", handleIntentInput, { passive: true });
-    window.addEventListener("touchmove", handleIntentInput, {
-      passive: true,
-    });
-    window.addEventListener("pointerdown", handleIntentInput);
-    window.addEventListener("keydown", handleIntentInput);
+    addSkipListeners();
 
     return () => {
       window.cancelAnimationFrame(animationFrame);
-      window.clearTimeout(triggerDelay);
+      window.clearTimeout(heroMorphTimer);
+      morphStepTimers.forEach((timer) => window.clearTimeout(timer));
       delete document.documentElement.dataset.homeReveal;
       delete document.documentElement.dataset.particlePage;
       window.removeEventListener("resize", resize);
       window.removeEventListener("scroll", handleScroll);
       window.removeEventListener("particle-theme-change", handleThemeChange);
-      window.removeEventListener("wheel", handleIntentInput);
-      window.removeEventListener("touchmove", handleIntentInput);
-      window.removeEventListener("pointerdown", handleIntentInput);
-      window.removeEventListener("keydown", handleIntentInput);
+      removeSkipListeners();
+      particleRenderer.dispose();
     };
   }, [heroText, introText]);
 
