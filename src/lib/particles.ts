@@ -33,8 +33,27 @@ export type TextTargetOptions = {
   variant: TextVariant;
 };
 
+type MaskSample = Point & {
+  alpha: number;
+  key: string;
+  weight: number;
+};
+
+type MaskCell = {
+  cellX: number;
+  cellY: number;
+  samples: MaskSample[];
+  weight: number;
+  weightedX: number;
+  weightedY: number;
+};
+
 export const DEFAULT_PARTICLE_FONT_FAMILY =
   'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+
+const EDGE_ALPHA_THRESHOLD = 32;
+const CORE_ALPHA_THRESHOLD = 80;
+const BEST_CANDIDATE_COUNT = 24;
 
 export function clampCount(count: number, min: number, max: number) {
   return Math.max(min, Math.min(max, count));
@@ -67,68 +86,289 @@ function getDefaultMaximumParticleCount(_width: number) {
   return 8000;
 }
 
-export function sampleStratifiedPoints(
-  points: Point[],
-  targetCount: number,
-  width: number,
-  step: number,
-  inkPixelsPerParticle = getDefaultInkPixelsPerParticle(width),
-) {
-  if (points.length <= targetCount) {
-    return points.map((point) => jitterPoint(point, step));
+function createSeed(value: string) {
+  let hash = 2166136261;
+
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
   }
 
-  const cellSize = Math.max(step, Math.sqrt(inkPixelsPerParticle));
-  const cells = new Map<string, Point[]>();
+  return hash >>> 0;
+}
 
-  for (const point of points) {
-    const cellX = Math.floor(point.x / cellSize);
-    const cellY = Math.floor(point.y / cellSize);
+function createSeededRandom(seed: number) {
+  let state = seed;
+
+  return () => {
+    state += 0x6d2b79f5;
+    let value = state;
+    value = Math.imul(value ^ (value >>> 15), value | 1);
+    value ^= value + Math.imul(value ^ (value >>> 7), value | 61);
+    return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function makePointKey(x: number, y: number) {
+  return `${x}:${y}`;
+}
+
+function buildMaskCells(samples: MaskSample[], cellSize: number) {
+  const cells = new Map<string, MaskCell>();
+
+  for (const sample of samples) {
+    const cellX = Math.floor(sample.x / cellSize);
+    const cellY = Math.floor(sample.y / cellSize);
     const cellKey = `${cellX}:${cellY}`;
-    const cellPoints = cells.get(cellKey);
+    const cell = cells.get(cellKey);
 
-    if (cellPoints) {
-      cellPoints.push(point);
+    if (cell) {
+      cell.samples.push(sample);
+      cell.weight += sample.weight;
+      cell.weightedX += sample.x * sample.weight;
+      cell.weightedY += sample.y * sample.weight;
     } else {
-      cells.set(cellKey, [point]);
+      cells.set(cellKey, {
+        cellX,
+        cellY,
+        samples: [sample],
+        weight: sample.weight,
+        weightedX: sample.x * sample.weight,
+        weightedY: sample.y * sample.weight,
+      });
     }
   }
 
-  const shuffledCells = Array.from(cells.values());
+  return Array.from(cells.values());
+}
 
-  for (let index = shuffledCells.length - 1; index > 0; index -= 1) {
-    const swapIndex = Math.floor(Math.random() * (index + 1));
-    [shuffledCells[index], shuffledCells[swapIndex]] = [
-      shuffledCells[swapIndex],
-      shuffledCells[index],
-    ];
+function pickCoverageRepresentative(cell: MaskCell) {
+  const centroidX = cell.weightedX / cell.weight;
+  const centroidY = cell.weightedY / cell.weight;
+  let bestSample = cell.samples[0];
+  let bestScore = Number.POSITIVE_INFINITY;
+
+  for (const sample of cell.samples) {
+    const dx = sample.x - centroidX;
+    const dy = sample.y - centroidY;
+    const score = dx * dx + dy * dy - sample.weight * 0.01;
+
+    if (score < bestScore) {
+      bestSample = sample;
+      bestScore = score;
+    }
   }
 
-  const sampledPoints: Point[] = [];
-  const unusedPoints: Point[] = [];
+  return bestSample;
+}
 
-  for (const cellPoints of shuffledCells) {
-    const selectedIndex = Math.floor(Math.random() * cellPoints.length);
-    sampledPoints.push(jitterPoint(cellPoints[selectedIndex], 0.55));
+function getSpatialCellKey(sample: Point, cellSize: number) {
+  return `${Math.floor(sample.x / cellSize)}:${Math.floor(sample.y / cellSize)}`;
+}
 
-    for (let index = 0; index < cellPoints.length; index += 1) {
-      if (index !== selectedIndex) {
-        unusedPoints.push(cellPoints[index]);
+function addSpatialSample(
+  sample: MaskSample,
+  cellSize: number,
+  spatialCells: Map<string, MaskSample[]>,
+) {
+  const cellKey = getSpatialCellKey(sample, cellSize);
+  const cell = spatialCells.get(cellKey);
+
+  if (cell) {
+    cell.push(sample);
+  } else {
+    spatialCells.set(cellKey, [sample]);
+  }
+}
+
+function getNearestDistanceSquared(
+  sample: MaskSample,
+  cellSize: number,
+  spatialCells: Map<string, MaskSample[]>,
+) {
+  const cellX = Math.floor(sample.x / cellSize);
+  const cellY = Math.floor(sample.y / cellSize);
+  let bestDistance = Number.POSITIVE_INFINITY;
+
+  for (let radius = 0; radius <= 4; radius += 1) {
+    for (let y = cellY - radius; y <= cellY + radius; y += 1) {
+      for (let x = cellX - radius; x <= cellX + radius; x += 1) {
+        const cell = spatialCells.get(`${x}:${y}`);
+
+        if (!cell) {
+          continue;
+        }
+
+        for (const otherSample of cell) {
+          const dx = sample.x - otherSample.x;
+          const dy = sample.y - otherSample.y;
+          const distance = dx * dx + dy * dy;
+
+          if (distance < bestDistance) {
+            bestDistance = distance;
+          }
+        }
       }
     }
+
+    if (bestDistance < Number.POSITIVE_INFINITY) {
+      return bestDistance;
+    }
   }
 
-  if (sampledPoints.length > targetCount) {
-    return sampledPoints.slice(0, targetCount);
+  return cellSize * cellSize * 25;
+}
+
+function selectBlueNoiseSamples(
+  candidates: MaskSample[],
+  targetCount: number,
+  seed: number,
+  nominalSpacing: number,
+  initialSamples: MaskSample[] = [],
+) {
+  const random = createSeededRandom(seed);
+  const selectedSamples: MaskSample[] = [];
+  const selectedKeys = new Set<string>();
+  const spatialCellSize = Math.max(1, nominalSpacing);
+  const spatialCells = new Map<string, MaskSample[]>();
+
+  function selectSample(sample: MaskSample) {
+    selectedSamples.push(sample);
+    selectedKeys.add(sample.key);
+    addSpatialSample(sample, spatialCellSize, spatialCells);
   }
 
-  while (sampledPoints.length < targetCount && unusedPoints.length > 0) {
-    const selectedIndex = Math.floor(Math.random() * unusedPoints.length);
-    const [point] = unusedPoints.splice(selectedIndex, 1);
-    sampledPoints.push(jitterPoint(point, 0.45));
+  for (const sample of initialSamples) {
+    if (selectedSamples.length >= targetCount) {
+      break;
+    }
+
+    if (!selectedKeys.has(sample.key)) {
+      selectSample(sample);
+    }
   }
 
-  return sampledPoints;
+  if (selectedSamples.length === 0 && candidates.length > 0) {
+    selectSample(candidates[Math.floor(random() * candidates.length)]);
+  }
+
+  while (
+    selectedSamples.length < targetCount &&
+    selectedKeys.size < candidates.length
+  ) {
+    let bestCandidate: MaskSample | undefined;
+    let bestScore = Number.NEGATIVE_INFINITY;
+
+    for (let index = 0; index < BEST_CANDIDATE_COUNT; index += 1) {
+      const candidate = candidates[Math.floor(random() * candidates.length)];
+
+      if (selectedKeys.has(candidate.key)) {
+        continue;
+      }
+
+      const nearestDistance = getNearestDistanceSquared(
+        candidate,
+        spatialCellSize,
+        spatialCells,
+      );
+      const score = nearestDistance * (0.75 + candidate.weight * 0.25);
+
+      if (score > bestScore) {
+        bestCandidate = candidate;
+        bestScore = score;
+      }
+    }
+
+    if (!bestCandidate) {
+      bestCandidate = candidates.find(
+        (candidate) => !selectedKeys.has(candidate.key),
+      );
+    }
+
+    if (!bestCandidate) {
+      break;
+    }
+
+    selectSample(bestCandidate);
+  }
+
+  return selectedSamples;
+}
+
+function jitterSelectedSamples(
+  samples: MaskSample[],
+  eligibleKeys: Set<string>,
+  nominalSpacing: number,
+  seed: number,
+) {
+  const random = createSeededRandom(seed);
+  const jitterAmount = Math.min(0.35, nominalSpacing * 0.14);
+
+  if (jitterAmount <= 0) {
+    return samples.map(({ x, y }) => ({ x, y }));
+  }
+
+  return samples.map((sample) => {
+    const x = sample.x + (random() - 0.5) * jitterAmount;
+    const y = sample.y + (random() - 0.5) * jitterAmount;
+    const roundedKey = makePointKey(Math.round(x), Math.round(y));
+
+    if (!eligibleKeys.has(roundedKey)) {
+      return {
+        x: sample.x,
+        y: sample.y,
+      };
+    }
+
+    return { x, y };
+  });
+}
+
+function sampleMaskBlueNoisePoints(
+  samples: MaskSample[],
+  targetCount: number,
+  weightedInkPixels: number,
+  seed: number,
+) {
+  if (samples.length <= targetCount) {
+    const eligibleKeys = new Set(samples.map((sample) => sample.key));
+    const nominalSpacing = Math.sqrt(
+      Math.max(1, weightedInkPixels / Math.max(1, targetCount)),
+    );
+
+    return jitterSelectedSamples(samples, eligibleKeys, nominalSpacing, seed);
+  }
+
+  const nominalSpacing = Math.sqrt(
+    Math.max(1, weightedInkPixels / Math.max(1, targetCount)),
+  );
+  const coverageCellSize = Math.max(2, nominalSpacing * 1.35);
+  const coverageRepresentatives = buildMaskCells(samples, coverageCellSize)
+    .sort((a, b) => a.cellY - b.cellY || a.cellX - b.cellX)
+    .map(pickCoverageRepresentative);
+  const selectedSamples =
+    coverageRepresentatives.length > targetCount
+      ? selectBlueNoiseSamples(
+          coverageRepresentatives,
+          targetCount,
+          seed,
+          nominalSpacing,
+        )
+      : selectBlueNoiseSamples(
+          samples,
+          targetCount,
+          seed,
+          nominalSpacing,
+          coverageRepresentatives,
+        );
+  const eligibleKeys = new Set(samples.map((sample) => sample.key));
+
+  return jitterSelectedSamples(
+    selectedSamples,
+    eligibleKeys,
+    nominalSpacing,
+    seed ^ 0x9e3779b9,
+  );
 }
 
 function getLines(
@@ -281,20 +521,34 @@ export function getTextTargets(
   });
 
   const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
-  const points: Point[] = [];
-  const step = 1;
+  const samples: MaskSample[] = [];
+  let coreInkPixels = 0;
+  let weightedInkPixels = 0;
 
-  for (let y = 0; y < canvas.height; y += step) {
-    for (let x = 0; x < canvas.width; x += step) {
+  for (let y = 0; y < canvas.height; y += 1) {
+    for (let x = 0; x < canvas.width; x += 1) {
       const alpha = pixels[(y * canvas.width + x) * 4 + 3];
 
-      if (alpha > 80) {
-        points.push({ x, y });
+      if (alpha > CORE_ALPHA_THRESHOLD) {
+        coreInkPixels += 1;
+      }
+
+      if (alpha >= EDGE_ALPHA_THRESHOLD) {
+        const weight = alpha / 255;
+
+        samples.push({
+          alpha,
+          key: makePointKey(x, y),
+          weight,
+          x,
+          y,
+        });
+        weightedInkPixels += weight;
       }
     }
   }
 
-  if (points.length === 0) {
+  if (samples.length === 0) {
     return [];
   }
 
@@ -313,18 +567,41 @@ export function getTextTargets(
     width,
     getDefaultMaximumParticleCount(width),
   );
+  const rawTargetCount = Math.round(
+    Math.max(coreInkPixels, weightedInkPixels) / inkPixelsPerParticle,
+  );
   const targetCount = clampCount(
-    Math.round(points.length / inkPixelsPerParticle),
-    Math.min(minimumCount, points.length),
-    maximumCount,
+    rawTargetCount,
+    Math.min(minimumCount, samples.length),
+    Math.min(maximumCount, samples.length),
   );
 
-  return sampleStratifiedPoints(
-    points,
+  if (targetCount <= 0) {
+    return [];
+  }
+
+  const targetSeed = createSeed(
+    [
+      text,
+      width,
+      height,
+      options.variant,
+      options.align ?? "center",
+      fontSize,
+      fontWeight,
+      lineHeight,
+      inkPixelsPerParticle,
+      minimumCount,
+      maximumCount,
+      targetCount,
+    ].join(":"),
+  );
+
+  return sampleMaskBlueNoisePoints(
+    samples,
     targetCount,
-    width,
-    step,
-    inkPixelsPerParticle,
+    Math.max(1, weightedInkPixels),
+    targetSeed,
   );
 }
 

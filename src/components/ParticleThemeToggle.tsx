@@ -46,9 +46,9 @@ function createParticleAtTarget(target: Point): Particle {
 function getIconTargets(theme: Theme) {
   return getTextTargets(THEME_ICONS[theme], ICON_SIZE, ICON_SIZE, {
     density: {
-      inkPixelsPerParticle: theme === "light" ? 0.76 : 1.42,
-      maximumCount: theme === "light" ? 1000 : 540,
-      minimumCount: theme === "light" ? 410 : 200,
+      inkPixelsPerParticle: theme === "light" ? 0.9 : 1,
+      maximumCount: theme === "light" ? 600 : 350,
+      minimumCount: theme === "light" ? 350 : 100,
     },
     fontSize: theme === "light" ? 46 : 44,
     fontWeight: "760",
