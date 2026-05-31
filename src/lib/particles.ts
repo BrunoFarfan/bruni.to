@@ -56,30 +56,14 @@ function resolveDensityValue(
 }
 
 function getDefaultInkPixelsPerParticle(width: number) {
-  if (width < 520) {
-    return 2.5;
-  }
-
-  if (width < 900) {
-    return 7.5;
-  }
-
-  return 10;
+  return width < 520 ? 7 : 10;
 }
 
-function getDefaultMinimumParticleCount(width: number) {
-  return width < 520 ? 720 : 980;
+function getDefaultMinimumParticleCount(_width: number) {
+  return 1;
 }
 
-function getDefaultMaximumParticleCount(width: number) {
-  if (width < 520) {
-    return 2600;
-  }
-
-  if (width < 900) {
-    return 5000;
-  }
-
+function getDefaultMaximumParticleCount(_width: number) {
   return 8000;
 }
 
@@ -298,7 +282,7 @@ export function getTextTargets(
 
   const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
   const points: Point[] = [];
-  const step = width < 520 ? 2 : 1;
+  const step = 1;
 
   for (let y = 0; y < canvas.height; y += step) {
     for (let x = 0; x < canvas.width; x += step) {

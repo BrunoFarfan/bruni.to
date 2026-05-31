@@ -215,6 +215,38 @@ export default function ParticleTitle({ introText, heroText, titleId }: Props) {
       );
     }
 
+    function moveOffscreenParticlesToViewportEdges() {
+      const scroll = getScrollOffset();
+      const left = scroll.x;
+      const top = scroll.y;
+      const right = scroll.x + width;
+      const bottom = scroll.y + height;
+      const edgeInset = 2;
+
+      particles.forEach((particle) => {
+        const isInView =
+          particle.x >= left &&
+          particle.x <= right &&
+          particle.y >= top &&
+          particle.y <= bottom;
+
+        if (isInView) {
+          return;
+        }
+
+        particle.x = Math.min(
+          Math.max(particle.x, left + edgeInset),
+          right - edgeInset,
+        );
+        particle.y = Math.min(
+          Math.max(particle.y, top + edgeInset),
+          bottom - edgeInset,
+        );
+        particle.vx = 0;
+        particle.vy = 0;
+      });
+    }
+
     function choosePageTarget() {
       const pageTargets = getPageTargets();
       const visibleTargets = pageTargets
@@ -223,6 +255,23 @@ export default function ParticleTitle({ introText, heroText, titleId }: Props) {
           target,
         }))
         .filter(({ rect }) => isVisible(rect));
+
+      if (width < 560) {
+        const activationLine = height * 0.72;
+        const activatedTargets = visibleTargets.filter(
+          ({ rect }) => rect.top <= activationLine,
+        );
+
+        if (activatedTargets.length > 0) {
+          activatedTargets.sort((a, b) => a.rect.top - b.rect.top);
+          return activatedTargets[activatedTargets.length - 1].target;
+        }
+
+        return (
+          pageTargets.find((target) => target.id === activePageTargetId) ??
+          pageTargets[0]
+        );
+      }
 
       if (visibleTargets.length > 0) {
         visibleTargets.sort((a, b) => a.rect.top - b.rect.top);
@@ -272,6 +321,11 @@ export default function ParticleTitle({ introText, heroText, titleId }: Props) {
       activePageTargetId = nextTarget.id;
       isPageTargetSettled = false;
       settledFrames = 0;
+
+      if (!force) {
+        moveOffscreenParticlesToViewportEdges();
+      }
+
       reconcileParticlesToTargets(particles, nextTargets, {
         force,
         shuffle: true,

@@ -663,11 +663,28 @@ html[data-home-reveal="ready"] .site-footer {
 
 @media (max-width: 560px) {
   .home-hero {
-    min-height: 94svh;
+    align-items: start;
+    min-height: 114svh;
+    padding-block: 0 clamp(2.5rem, 7svh, 4rem);
+  }
+
+  .home-hero__inner {
+    align-content: start;
+    position: relative;
+    min-height: 114svh;
+    padding-top: 76svh;
   }
 
   .particle-title {
-    min-height: clamp(17rem, 76vw, 24rem);
+    position: absolute;
+    inset: 0 0 auto;
+    height: 100svh;
+    min-height: 100svh;
+  }
+
+  .home-hero__kicker {
+    position: absolute;
+    inset: max(1.35rem, env(safe-area-inset-top)) 0 auto;
   }
 
   .home-project__main {
