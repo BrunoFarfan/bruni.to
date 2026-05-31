@@ -36,7 +36,7 @@ const SETTLE_DISTANCE = 0.75;
 const SETTLE_SPEED = 0.08;
 // How long the intro title ("bruni.to") rests before it automatically begins
 // morphing into the hero name.
-const HERO_MORPH_DELAY = 200;
+const HERO_MORPH_DELAY = 700;
 // Total time spent stepping through the morph sequence.
 const MORPH_SEQUENCE_DURATION = 1000;
 
@@ -433,58 +433,6 @@ export default function ParticleTitle({
       });
     }
 
-    function skipToFinalForm() {
-      if (state === "page-ready") {
-        return;
-      }
-
-      // Any user interaction during the intro cancels the remaining steps and
-      // morphs the dots straight to the final hero name — keeping the particle
-      // animation, just skipping the intermediate words. Once it settles, tick
-      // hands off to normal scroll-tracking.
-      window.clearTimeout(heroMorphTimer);
-      morphStepTimers.forEach((timer) => window.clearTimeout(timer));
-      morphStepTimers = [];
-      isFinalMorphReached = true;
-      settledFrames = 0;
-      state = "forming-hero";
-      document.documentElement.dataset.homeReveal = "morphing";
-
-      if (heroTargets.length > 0) {
-        reconcileParticlesToTargets(particles, heroTargets, { shuffle: true });
-      }
-
-      scheduleTick();
-    }
-
-    function handleSkipIntent(event: Event) {
-      if (
-        event instanceof KeyboardEvent &&
-        (event.metaKey || event.ctrlKey || event.altKey)
-      ) {
-        return;
-      }
-
-      skipToFinalForm();
-      removeSkipListeners();
-    }
-
-    function addSkipListeners() {
-      window.addEventListener("wheel", handleSkipIntent, { passive: true });
-      window.addEventListener("touchstart", handleSkipIntent, {
-        passive: true,
-      });
-      window.addEventListener("pointerdown", handleSkipIntent);
-      window.addEventListener("keydown", handleSkipIntent);
-    }
-
-    function removeSkipListeners() {
-      window.removeEventListener("wheel", handleSkipIntent);
-      window.removeEventListener("touchstart", handleSkipIntent);
-      window.removeEventListener("pointerdown", handleSkipIntent);
-      window.removeEventListener("keydown", handleSkipIntent);
-    }
-
     function handleScroll() {
       retargetToPageTitle();
 
@@ -712,7 +660,6 @@ export default function ParticleTitle({
           isPageTargetSettled = false;
           settledFrames = 0;
           document.documentElement.dataset.homeReveal = "ready";
-          removeSkipListeners();
           // Animate to whatever title is now in view (e.g. the user scrolled to
           // Work during the intro) instead of teleporting onto it.
           retargetToPageTitle();
@@ -747,7 +694,6 @@ export default function ParticleTitle({
     window.addEventListener("resize", resize);
     window.addEventListener("scroll", handleScroll, { passive: true });
     window.addEventListener("particle-theme-change", handleThemeChange);
-    addSkipListeners();
 
     return () => {
       window.cancelAnimationFrame(animationFrame);
@@ -758,7 +704,6 @@ export default function ParticleTitle({
       window.removeEventListener("resize", resize);
       window.removeEventListener("scroll", handleScroll);
       window.removeEventListener("particle-theme-change", handleThemeChange);
-      removeSkipListeners();
       particleRenderer.dispose();
     };
   }, [heroText, introText, morphSteps]);
