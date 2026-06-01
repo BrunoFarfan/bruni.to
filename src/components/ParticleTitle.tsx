@@ -153,6 +153,9 @@ export default function ParticleTitle({
       active: false,
       clientX: 0,
       clientY: 0,
+      isContact: false,
+      pointerId: null as number | null,
+      touchId: null as number | null,
       x: 0,
       y: 0,
     };
@@ -505,16 +508,47 @@ export default function ParticleTitle({
       pointer.y = pointer.clientY + window.scrollY;
     }
 
+    function updatePointerPosition(clientX: number, clientY: number) {
+      pointer.active = true;
+      pointer.clientX = clientX;
+      pointer.clientY = clientY;
+      syncPointerWithScroll();
+      scheduleTick();
+    }
+
+    function updatePointerFromEvent(event: PointerEvent) {
+      updatePointerPosition(event.clientX, event.clientY);
+    }
+
+    function handlePointerDown(event: PointerEvent) {
+      if (event.pointerType === "mouse" || event.pointerType === "touch") {
+        return;
+      }
+
+      pointer.isContact = true;
+      pointer.pointerId = event.pointerId;
+      pointer.touchId = null;
+      updatePointerFromEvent(event);
+    }
+
     function handlePointerMove(event: PointerEvent) {
+      if (event.pointerType === "mouse") {
+        pointer.isContact = false;
+        pointer.pointerId = null;
+        pointer.touchId = null;
+        updatePointerFromEvent(event);
+        return;
+      }
+
       if (event.pointerType === "touch") {
         return;
       }
 
-      pointer.active = true;
-      pointer.clientX = event.clientX;
-      pointer.clientY = event.clientY;
-      syncPointerWithScroll();
-      scheduleTick();
+      if (!pointer.isContact || pointer.pointerId !== event.pointerId) {
+        return;
+      }
+
+      updatePointerFromEvent(event);
     }
 
     function clearPointer() {
@@ -523,7 +557,77 @@ export default function ParticleTitle({
       }
 
       pointer.active = false;
+      pointer.isContact = false;
+      pointer.pointerId = null;
+      pointer.touchId = null;
       scheduleTick();
+    }
+
+    function clearContactPointer(event: PointerEvent) {
+      if (!pointer.isContact || pointer.pointerId !== event.pointerId) {
+        return;
+      }
+
+      clearPointer();
+    }
+
+    function findTrackedTouch(touches: TouchList) {
+      if (pointer.touchId === null) {
+        return touches[0] ?? null;
+      }
+
+      for (let index = 0; index < touches.length; index += 1) {
+        const touch = touches.item(index);
+
+        if (touch?.identifier === pointer.touchId) {
+          return touch;
+        }
+      }
+
+      return null;
+    }
+
+    function updatePointerFromTouch(touch: Touch) {
+      pointer.isContact = true;
+      pointer.pointerId = null;
+      pointer.touchId = touch.identifier;
+      updatePointerPosition(touch.clientX, touch.clientY);
+    }
+
+    function handleTouchStart(event: TouchEvent) {
+      const touch = findTrackedTouch(event.touches);
+
+      if (!touch) {
+        return;
+      }
+
+      updatePointerFromTouch(touch);
+    }
+
+    function handleTouchMove(event: TouchEvent) {
+      const touch = findTrackedTouch(event.touches);
+
+      if (!touch) {
+        clearPointer();
+        return;
+      }
+
+      updatePointerFromTouch(touch);
+    }
+
+    function clearTouchPointer(event: TouchEvent) {
+      if (pointer.touchId === null) {
+        return;
+      }
+
+      const touch = findTrackedTouch(event.touches);
+
+      if (touch) {
+        updatePointerFromTouch(touch);
+        return;
+      }
+
+      clearPointer();
     }
 
     function parseColor(value: string): RGB {
@@ -805,9 +909,18 @@ export default function ParticleTitle({
 
     window.addEventListener("resize", resize);
     window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("pointerdown", handlePointerDown, {
+      passive: true,
+    });
     window.addEventListener("pointermove", handlePointerMove, {
       passive: true,
     });
+    window.addEventListener("pointerup", clearContactPointer);
+    window.addEventListener("pointercancel", clearContactPointer);
+    window.addEventListener("touchstart", handleTouchStart, { passive: true });
+    window.addEventListener("touchmove", handleTouchMove, { passive: true });
+    window.addEventListener("touchend", clearTouchPointer);
+    window.addEventListener("touchcancel", clearTouchPointer);
     window.addEventListener("pointerleave", clearPointer);
     window.addEventListener("blur", clearPointer);
     window.addEventListener("particle-theme-change", handleThemeChange);
@@ -821,7 +934,14 @@ export default function ParticleTitle({
       delete document.documentElement.dataset.particlePage;
       window.removeEventListener("resize", resize);
       window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("pointerdown", handlePointerDown);
       window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", clearContactPointer);
+      window.removeEventListener("pointercancel", clearContactPointer);
+      window.removeEventListener("touchstart", handleTouchStart);
+      window.removeEventListener("touchmove", handleTouchMove);
+      window.removeEventListener("touchend", clearTouchPointer);
+      window.removeEventListener("touchcancel", clearTouchPointer);
       window.removeEventListener("pointerleave", clearPointer);
       window.removeEventListener("blur", clearPointer);
       window.removeEventListener("particle-theme-change", handleThemeChange);

@@ -242,6 +242,8 @@ p {
   justify-items: center;
   min-height: clamp(19rem, 48vw, 34rem);
   align-items: center;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .particle-title__canvas {
@@ -277,6 +279,8 @@ html[data-home-reveal="morphing"] .particle-title__fallback {
 
 html[data-particle-page="enhanced"] .particle-section-title {
   color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .particle-title--enhanced .particle-title__fallback {
