@@ -36,11 +36,11 @@ const SETTLE_DISTANCE = 0.75;
 const SETTLE_SPEED = 0.08;
 const POINTER_REPULSION_RADIUS = 86;
 const POINTER_REPULSION_FORCE = 3.8;
-// How long the intro title ("bruni.to") rests before it automatically begins
-// morphing into the hero name.
-const HERO_MORPH_DELAY = 700;
+// Wall-clock pacing keeps hover interaction from blocking the loading sequence.
+const HERO_MORPH_DELAY = 2750;
 // Total time spent stepping through the morph sequence.
 const MORPH_SEQUENCE_DURATION = 1000;
+const PAGE_REVEAL_DELAY = MORPH_SEQUENCE_DURATION + 500;
 
 function getCircleSpawn(width: number, height: number): Particle {
   const angle = Math.random() * Math.PI * 2;
@@ -145,9 +145,10 @@ export default function ParticleTitle({
     let isPageTargetSettled = false;
     let state: MotionState = "forming-domain";
     let heroMorphTimer = 0;
+    let pageRevealTimer = 0;
     let morphStepTimers: number[] = [];
-    let isFinalMorphReached = false;
     let settledFrames = 0;
+    let hasStartedIntroAnimation = false;
     const pointer = {
       active: false,
       clientX: 0,
@@ -407,15 +408,32 @@ export default function ParticleTitle({
       });
     }
 
+    function scheduleHeroMorph() {
+      if (heroMorphTimer !== 0 || state !== "forming-domain") {
+        return;
+      }
+
+      heroMorphTimer = window.setTimeout(() => {
+        heroMorphTimer = 0;
+        startHeroMorph();
+      }, HERO_MORPH_DELAY);
+    }
+
     function startHeroMorph() {
       if (state === "forming-hero" || state === "page-ready") {
         return;
       }
 
+      window.clearTimeout(heroMorphTimer);
+      heroMorphTimer = 0;
       state = "forming-hero";
       document.documentElement.dataset.homeReveal = "morphing";
       settledFrames = 0;
-      isFinalMorphReached = false;
+      window.clearTimeout(pageRevealTimer);
+      pageRevealTimer = window.setTimeout(() => {
+        pageRevealTimer = 0;
+        revealPageContent();
+      }, PAGE_REVEAL_DELAY);
 
       // The first entry of the sequence is already on screen, so step through
       // the rest quickly, spacing the transitions so the whole sequence lands
@@ -424,17 +442,12 @@ export default function ParticleTitle({
       const interval = MORPH_SEQUENCE_DURATION / Math.max(1, steps.length);
 
       steps.forEach((text, index) => {
-        const isFinalStep = index === steps.length - 1;
         const timer = window.setTimeout(
           () => {
             const targets = getHeroTargetsForText(text);
 
             if (targets.length === 0) {
               return;
-            }
-
-            if (isFinalStep) {
-              isFinalMorphReached = true;
             }
 
             reconcileParticlesToTargets(particles, targets, { shuffle: true });
@@ -445,10 +458,37 @@ export default function ParticleTitle({
 
         morphStepTimers.push(timer);
       });
+
+      if (steps.length === 0 && heroTargets.length > 0) {
+        reconcileParticlesToTargets(particles, heroTargets, { shuffle: true });
+      }
+
+      scheduleTick();
+    }
+
+    function revealPageContent() {
+      if (state !== "forming-hero") {
+        return;
+      }
+
+      state = "page-ready";
+      activePageTargetId = "hero";
+      isPageTargetSettled = false;
+      settledFrames = 0;
+      document.documentElement.dataset.homeReveal = "ready";
+      // Animate to whatever title is now in view (e.g. the user scrolled to
+      // Work during the intro) instead of teleporting onto it.
+      retargetToPageTitle();
+      scheduleTick();
     }
 
     function handleScroll() {
       syncPointerWithScroll();
+
+      if (state === "forming-domain" || state === "domain-settled") {
+        startHeroMorph();
+      }
+
       retargetToPageTitle();
 
       if (state === "page-ready" && isPageTargetSettled) {
@@ -570,6 +610,11 @@ export default function ParticleTitle({
         particles = Array.from({ length: domainTargets.length }, () =>
           getPageCircleSpawn(width, height),
         );
+      }
+
+      if (!hasStartedIntroAnimation) {
+        hasStartedIntroAnimation = true;
+        scheduleHeroMorph();
       }
 
       if (state === "page-ready") {
@@ -726,16 +771,6 @@ export default function ParticleTitle({
         if (state === "forming-domain") {
           state = "domain-settled";
           settledFrames = 0;
-          heroMorphTimer = window.setTimeout(startHeroMorph, HERO_MORPH_DELAY);
-        } else if (state === "forming-hero" && isFinalMorphReached) {
-          state = "page-ready";
-          activePageTargetId = "hero";
-          isPageTargetSettled = false;
-          settledFrames = 0;
-          document.documentElement.dataset.homeReveal = "ready";
-          // Animate to whatever title is now in view (e.g. the user scrolled to
-          // Work during the intro) instead of teleporting onto it.
-          retargetToPageTitle();
         } else if (state === "page-ready") {
           lockCurrentPageTarget();
           settledFrames = 0;
@@ -780,6 +815,7 @@ export default function ParticleTitle({
     return () => {
       window.cancelAnimationFrame(animationFrame);
       window.clearTimeout(heroMorphTimer);
+      window.clearTimeout(pageRevealTimer);
       morphStepTimers.forEach((timer) => window.clearTimeout(timer));
       delete document.documentElement.dataset.homeReveal;
       delete document.documentElement.dataset.particlePage;
