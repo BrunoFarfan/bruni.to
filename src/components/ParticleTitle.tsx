@@ -824,21 +824,14 @@ export default function ParticleTitle({
         }
 
         if (particle.mode === "born") {
-          particle.opacity = Math.min(1, particle.opacity + 0.045);
-          particle.scale = Math.min(1, particle.scale + 0.052);
-
-          if (particle.opacity >= 1 && particle.scale >= 1) {
-            particle.mode = "active";
-          } else {
-            hasLifecycleMotion = true;
-          }
+          particle.opacity = 1;
+          particle.scale = 1;
+          particle.mode = "active";
         } else if (particle.mode === "retiring") {
-          if (distance < 9 || isSettled) {
-            particle.opacity = Math.max(0, particle.opacity - 0.075);
-            particle.scale = Math.max(0, particle.scale - 0.06);
-          }
-
-          if (particle.opacity > 0.02 && particle.scale > 0.04) {
+          if (isSettled) {
+            particle.opacity = 0;
+            particle.scale = 0;
+          } else {
             hasLifecycleMotion = true;
           }
         }

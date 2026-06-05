@@ -302,21 +302,14 @@ export default function ParticleThemeToggle() {
         }
 
         if (particle.mode === "born") {
-          particle.opacity = Math.min(1, particle.opacity + 0.07);
-          particle.scale = Math.min(1, particle.scale + 0.08);
-
-          if (particle.opacity >= 1 && particle.scale >= 1) {
-            particle.mode = "active";
-          } else {
-            hasLifecycleMotion = true;
-          }
+          particle.opacity = 1;
+          particle.scale = 1;
+          particle.mode = "active";
         } else if (particle.mode === "retiring") {
-          if (distance < 5 || isSettled) {
-            particle.opacity = Math.max(0, particle.opacity - 0.1);
-            particle.scale = Math.max(0, particle.scale - 0.085);
-          }
-
-          if (particle.opacity > 0.02 && particle.scale > 0.04) {
+          if (isSettled) {
+            particle.opacity = 0;
+            particle.scale = 0;
+          } else {
             hasLifecycleMotion = true;
           }
         }

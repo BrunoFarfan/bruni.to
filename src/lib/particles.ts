@@ -652,9 +652,9 @@ export function cloneParticle(particle: Particle): Particle {
     vy: particle.vy + (Math.random() - 0.5) * 0.9,
     tx: particle.tx,
     ty: particle.ty,
-    opacity: 0,
-    scale: 0.18,
-    mode: "born",
+    opacity: 1,
+    scale: 1,
+    mode: "active",
   };
 }
 
@@ -691,9 +691,9 @@ export function reconcileParticlesToTargets(
         vy: 0,
         tx: targets[particles.length].x,
         ty: targets[particles.length].y,
-        opacity: force ? 1 : 0,
-        scale: force ? 1 : 0.18,
-        mode: force ? "active" : "born",
+        opacity: 1,
+        scale: 1,
+        mode: "active",
       } satisfies Particle);
 
     particles.push(force ? { ...source } : cloneParticle(source));
@@ -726,8 +726,8 @@ export function reconcileParticlesToTargets(
 
     if (particle.mode === "retiring") {
       particle.mode = "active";
-      particle.opacity = Math.max(particle.opacity, 0.35);
-      particle.scale = Math.max(particle.scale, 0.55);
+      particle.opacity = 1;
+      particle.scale = 1;
     }
   });
 }
