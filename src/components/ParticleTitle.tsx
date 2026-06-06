@@ -32,6 +32,8 @@ type PageTitleTarget = {
   variant: "hero" | "section";
 };
 
+type InteractionHintPattern = "sweep" | "orbit";
+
 const SETTLE_DISTANCE = 0.75;
 const SETTLE_SPEED = 0.08;
 const POINTER_REPULSION_RADIUS = 86;
@@ -41,6 +43,10 @@ const HERO_MORPH_DELAY = 2750;
 // Total time spent stepping through the morph sequence.
 const MORPH_SEQUENCE_DURATION = 1000;
 const PAGE_REVEAL_DELAY = MORPH_SEQUENCE_DURATION + 500;
+const PARTICLE_INTERACTION_HINT_INITIAL_DELAY = 3000;
+const PARTICLE_INTERACTION_HINT_FOLLOWUP_DELAY = 3000;
+const PARTICLE_INTERACTION_SWEEP_DURATION = 1150;
+const PARTICLE_INTERACTION_ORBIT_DURATION = 1900;
 
 function getCircleSpawn(width: number, height: number): Particle {
   const angle = Math.random() * Math.PI * 2;
@@ -146,6 +152,7 @@ export default function ParticleTitle({
     let state: MotionState = "forming-domain";
     let heroMorphTimer = 0;
     let pageRevealTimer = 0;
+    let interactionHintTimer = 0;
     let morphStepTimers: number[] = [];
     let settledFrames = 0;
     let hasStartedIntroAnimation = false;
@@ -156,6 +163,20 @@ export default function ParticleTitle({
       isContact: false,
       pointerId: null as number | null,
       touchId: null as number | null,
+      x: 0,
+      y: 0,
+    };
+    const interactionHint = {
+      active: false,
+      canceled: false,
+      centerX: 0,
+      centerY: 0,
+      endX: 0,
+      nextPattern: "sweep" as InteractionHintPattern | null,
+      pattern: "sweep" as InteractionHintPattern,
+      radius: 0,
+      startX: 0,
+      startedAt: 0,
       x: 0,
       y: 0,
     };
@@ -365,6 +386,7 @@ export default function ParticleTitle({
       activePageTargetId = nextTarget.id;
       isPageTargetSettled = false;
       settledFrames = 0;
+      stopInteractionHint();
 
       if (!force) {
         moveOffscreenParticlesToViewportEdges();
@@ -377,6 +399,7 @@ export default function ParticleTitle({
 
       if (force) {
         isPageTargetSettled = true;
+        scheduleInteractionHint();
       }
 
       scheduleTick();
@@ -393,6 +416,166 @@ export default function ParticleTitle({
 
       lockParticlesToTargets(particles);
       isPageTargetSettled = true;
+      scheduleInteractionHint();
+    }
+
+    function clearInteractionHintTimer() {
+      if (interactionHintTimer === 0) {
+        return;
+      }
+
+      window.clearTimeout(interactionHintTimer);
+      interactionHintTimer = 0;
+    }
+
+    function stopInteractionHint() {
+      const wasActive = interactionHint.active;
+
+      interactionHint.active = false;
+      clearInteractionHintTimer();
+
+      if (wasActive) {
+        scheduleTick();
+      }
+    }
+
+    function cancelInteractionHint() {
+      interactionHint.canceled = true;
+      interactionHint.nextPattern = null;
+      stopInteractionHint();
+    }
+
+    function getInteractionHintDelay(pattern: InteractionHintPattern) {
+      return pattern === "sweep"
+        ? PARTICLE_INTERACTION_HINT_INITIAL_DELAY
+        : PARTICLE_INTERACTION_HINT_FOLLOWUP_DELAY;
+    }
+
+    function getInteractionHintDuration(pattern: InteractionHintPattern) {
+      return pattern === "sweep"
+        ? PARTICLE_INTERACTION_SWEEP_DURATION
+        : PARTICLE_INTERACTION_ORBIT_DURATION;
+    }
+
+    function getRepulsionRadius() {
+      return width < 520
+        ? POINTER_REPULSION_RADIUS * 0.72
+        : POINTER_REPULSION_RADIUS;
+    }
+
+    function getActiveParticleTargetBounds() {
+      let left = Number.POSITIVE_INFINITY;
+      let top = Number.POSITIVE_INFINITY;
+      let right = Number.NEGATIVE_INFINITY;
+      let bottom = Number.NEGATIVE_INFINITY;
+
+      for (const particle of particles) {
+        if (particle.mode === "retiring") {
+          continue;
+        }
+
+        left = Math.min(left, particle.tx);
+        top = Math.min(top, particle.ty);
+        right = Math.max(right, particle.tx);
+        bottom = Math.max(bottom, particle.ty);
+      }
+
+      if (
+        !Number.isFinite(left) ||
+        !Number.isFinite(top) ||
+        !Number.isFinite(right) ||
+        !Number.isFinite(bottom)
+      ) {
+        return null;
+      }
+
+      return { bottom, left, right, top };
+    }
+
+    function isPointNearParticleTargets(x: number, y: number) {
+      const bounds = getActiveParticleTargetBounds();
+
+      if (!bounds) {
+        return false;
+      }
+
+      const radius = getRepulsionRadius();
+
+      return (
+        x >= bounds.left - radius &&
+        x <= bounds.right + radius &&
+        y >= bounds.top - radius &&
+        y <= bounds.bottom + radius
+      );
+    }
+
+    function cancelInteractionHintIfPointerIsNearParticles() {
+      if (!pointer.active || !isPointNearParticleTargets(pointer.x, pointer.y)) {
+        return;
+      }
+
+      cancelInteractionHint();
+    }
+
+    function startInteractionHint() {
+      interactionHintTimer = 0;
+
+      if (
+        interactionHint.active ||
+        interactionHint.canceled ||
+        !interactionHint.nextPattern ||
+        state !== "page-ready" ||
+        !isPageTargetSettled
+      ) {
+        return;
+      }
+
+      const bounds = getActiveParticleTargetBounds();
+
+      if (!bounds) {
+        return;
+      }
+
+      const padding = width < 520 ? 34 : 46;
+      const textWidth = Math.max(1, bounds.right - bounds.left);
+      const pattern = interactionHint.nextPattern;
+
+      interactionHint.active = true;
+      interactionHint.pattern = pattern;
+      interactionHint.startedAt = window.performance.now();
+
+      if (pattern === "sweep") {
+        interactionHint.startX = bounds.left - padding;
+        interactionHint.endX = bounds.right + padding;
+        interactionHint.x = interactionHint.startX;
+        interactionHint.y = (bounds.top + bounds.bottom) / 2;
+      } else {
+        interactionHint.radius = textWidth / 2;
+        interactionHint.centerX = (bounds.left + bounds.right) / 2;
+        interactionHint.centerY = bounds.top + interactionHint.radius;
+        interactionHint.x = interactionHint.centerX - interactionHint.radius;
+        interactionHint.y = interactionHint.centerY;
+      }
+
+      scheduleTick();
+    }
+
+    function scheduleInteractionHint() {
+      if (
+        interactionHintTimer !== 0 ||
+        interactionHint.active ||
+        interactionHint.canceled ||
+        !interactionHint.nextPattern ||
+        state !== "page-ready" ||
+        !isPageTargetSettled
+      ) {
+        return;
+      }
+
+      interactionHintTimer = window.setTimeout(
+        startInteractionHint,
+        getInteractionHintDelay(interactionHint.nextPattern),
+      );
     }
 
     function getHeroTargetsForText(text: string) {
@@ -486,6 +669,7 @@ export default function ParticleTitle({
     }
 
     function handleScroll() {
+      stopInteractionHint();
       syncPointerWithScroll();
 
       if (state === "forming-domain" || state === "domain-settled") {
@@ -496,6 +680,7 @@ export default function ParticleTitle({
 
       if (state === "page-ready" && isPageTargetSettled) {
         draw();
+        scheduleInteractionHint();
       }
     }
 
@@ -513,6 +698,7 @@ export default function ParticleTitle({
       pointer.clientX = clientX;
       pointer.clientY = clientY;
       syncPointerWithScroll();
+      cancelInteractionHintIfPointerIsNearParticles();
       scheduleTick();
     }
 
@@ -660,6 +846,10 @@ export default function ParticleTitle({
     }
 
     function resize() {
+      if (hasStartedIntroAnimation) {
+        stopInteractionHint();
+      }
+
       width = window.innerWidth;
       height = window.innerHeight;
       pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
@@ -775,10 +965,39 @@ export default function ParticleTitle({
       let hasPointerMotion = false;
       const spring = state === "forming-domain" ? 0.014 : 0.018;
       const damping = state === "forming-domain" ? 0.878 : 0.865;
-      const repulsionRadius =
-        width < 520
-          ? POINTER_REPULSION_RADIUS * 0.72
-          : POINTER_REPULSION_RADIUS;
+      const repulsionRadius = getRepulsionRadius();
+      let repulsionPointer: { active: boolean; x: number; y: number } = pointer;
+
+      if (interactionHint.active) {
+        const progress = Math.min(
+          1,
+          (window.performance.now() - interactionHint.startedAt) /
+            getInteractionHintDuration(interactionHint.pattern),
+        );
+        const easedProgress = 0.5 - Math.cos(progress * Math.PI) / 2;
+
+        if (interactionHint.pattern === "sweep") {
+          interactionHint.x =
+            interactionHint.startX +
+            (interactionHint.endX - interactionHint.startX) * easedProgress;
+        } else {
+          const angle = Math.PI - Math.PI * 2 * easedProgress;
+
+          interactionHint.x =
+            interactionHint.centerX + Math.cos(angle) * interactionHint.radius;
+          interactionHint.y =
+            interactionHint.centerY + Math.sin(angle) * interactionHint.radius;
+        }
+
+        if (progress >= 1) {
+          interactionHint.nextPattern =
+            interactionHint.pattern === "sweep" ? "orbit" : null;
+          interactionHint.active = false;
+          scheduleInteractionHint();
+        } else {
+          repulsionPointer = interactionHint;
+        }
+      }
 
       for (const particle of particles) {
         const dx = particle.tx - particle.x;
@@ -787,9 +1006,9 @@ export default function ParticleTitle({
         let nextVy = particle.vy + dy * spring;
         let wasRepelled = false;
 
-        if (pointer.active && particle.mode !== "retiring") {
-          const pointerDx = particle.x - pointer.x;
-          const pointerDy = particle.y - pointer.y;
+        if (repulsionPointer.active && particle.mode !== "retiring") {
+          const pointerDx = particle.x - repulsionPointer.x;
+          const pointerDy = particle.y - repulsionPointer.y;
           const pointerDistance = Math.hypot(pointerDx, pointerDy);
 
           if (pointerDistance > 0.001 && pointerDistance < repulsionRadius) {
@@ -883,12 +1102,14 @@ export default function ParticleTitle({
         state === "page-ready" && !isPageTargetSettled && settledFrames <= 12;
       const needsPointerReturn =
         state === "domain-settled" && (hasPointerMotion || settledRatio < 1);
+      const needsInteractionHint = interactionHint.active;
 
       if (
         needsPointerReturn ||
         (state !== "domain-settled" &&
           (needsStateTransition ||
             needsPageLock ||
+            needsInteractionHint ||
             hasLifecycleMotion ||
             hasPointerMotion ||
             settledRatio < 1))
@@ -922,6 +1143,7 @@ export default function ParticleTitle({
       window.cancelAnimationFrame(animationFrame);
       window.clearTimeout(heroMorphTimer);
       window.clearTimeout(pageRevealTimer);
+      window.clearTimeout(interactionHintTimer);
       morphStepTimers.forEach((timer) => window.clearTimeout(timer));
       delete document.documentElement.dataset.homeReveal;
       delete document.documentElement.dataset.particlePage;
