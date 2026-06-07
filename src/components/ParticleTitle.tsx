@@ -510,7 +510,10 @@ export default function ParticleTitle({
     }
 
     function cancelInteractionHintIfPointerIsNearParticles() {
-      if (!pointer.active || !isPointNearParticleTargets(pointer.x, pointer.y)) {
+      if (
+        !pointer.active ||
+        !isPointNearParticleTargets(pointer.x, pointer.y)
+      ) {
         return;
       }
 
@@ -553,7 +556,7 @@ export default function ParticleTitle({
         interactionHint.radius = textWidth / 2;
         interactionHint.centerX = (bounds.left + bounds.right) / 2;
         interactionHint.centerY = bounds.top + interactionHint.radius;
-        interactionHint.x = interactionHint.centerX - interactionHint.radius;
+        interactionHint.x = interactionHint.centerX + interactionHint.radius;
         interactionHint.y = interactionHint.centerY;
       }
 
@@ -981,12 +984,12 @@ export default function ParticleTitle({
             interactionHint.startX +
             (interactionHint.endX - interactionHint.startX) * easedProgress;
         } else {
-          const angle = Math.PI - Math.PI * 2 * easedProgress;
+          const angle = Math.PI * easedProgress;
 
           interactionHint.x =
             interactionHint.centerX + Math.cos(angle) * interactionHint.radius;
           interactionHint.y =
-            interactionHint.centerY + Math.sin(angle) * interactionHint.radius;
+            interactionHint.centerY - Math.sin(angle) * interactionHint.radius;
         }
 
         if (progress >= 1) {
@@ -1006,7 +1009,7 @@ export default function ParticleTitle({
         let nextVy = particle.vy + dy * spring;
         let wasRepelled = false;
 
-        if (repulsionPointer.active && particle.mode !== "retiring") {
+        if (repulsionPointer.active) {
           const pointerDx = particle.x - repulsionPointer.x;
           const pointerDy = particle.y - repulsionPointer.y;
           const pointerDistance = Math.hypot(pointerDx, pointerDy);
