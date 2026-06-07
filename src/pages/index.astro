@@ -5,7 +5,7 @@ import { labProjects, workProjects } from "../data/projects";
 
 const contactLinks = [
     {
-        href: "mailto:bruno.farfan.miquel@uc.cl",
+        href: "mailto:info@bruni.to",
         label: "Email",
         ariaLabel: "Email Bruno Farfán Miquel",
     },
@@ -51,9 +51,9 @@ const contactLinks = [
                     AI that ships
                 </h2>
                 <p class="home-hero__lead">
-                    Data scientist and software engineer. I build AI
-                    automation, scraping systems, and document tools that
-                    survive real users.
+                    Data scientist and software engineer. I build AI automation,
+                    scraping systems, and document tools that survive real
+                    users.
                 </p>
                 <div class="home-hero__links" aria-label="Primary links">
                     {
@@ -61,8 +61,16 @@ const contactLinks = [
                             <a
                                 class="external-text-link"
                                 href={link.href}
-                                target={link.href.startsWith("mailto:") ? undefined : "_blank"}
-                                rel={link.href.startsWith("mailto:") ? undefined : "noreferrer"}
+                                target={
+                                    link.href.startsWith("mailto:")
+                                        ? undefined
+                                        : "_blank"
+                                }
+                                rel={
+                                    link.href.startsWith("mailto:")
+                                        ? undefined
+                                        : "noreferrer"
+                                }
                                 aria-label={link.ariaLabel}
                             >
                                 <span>{link.label}</span>
@@ -83,7 +91,6 @@ const contactLinks = [
     </section>
 
     <div class="home-content">
-
         <section class="home-index-section" aria-labelledby="work-title">
             <div class="container">
                 <div class="home-section-heading">
