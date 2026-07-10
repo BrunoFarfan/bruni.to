@@ -19,12 +19,17 @@ const contactLinks = [
         label: "LinkedIn",
         ariaLabel: "Open LinkedIn in a new tab",
     },
+    {
+        href: "/bruno-farfan-cv.pdf",
+        label: "CV",
+        ariaLabel: "Open Bruno Farfán's CV in a new tab",
+    },
 ];
 ---
 
 <Layout
-    title="Bruno Farfán Miquel"
-    description="A personal portfolio for selected work, technical experiments, and notes across AI, automation, document intelligence, and software engineering."
+    title="Bruno Farfán | Software Engineer & AI Engineer"
+    description="Software engineer and data scientist building production AI automation, web scraping systems, and document intelligence tools."
 >
     <script is:inline>
         try {
@@ -69,7 +74,7 @@ const contactLinks = [
                                 rel={
                                     link.href.startsWith("mailto:")
                                         ? undefined
-                                        : "noreferrer"
+                                        : "noopener noreferrer"
                                 }
                                 aria-label={link.ariaLabel}
                             >
