@@ -1,0 +1,35 @@
+import type { ConstellationDefinition } from "./types";
+
+export const VIRGO: ConstellationDefinition = {
+  id: "virgo",
+  name: "Virgo",
+  stars: [
+    { id: "nu", x: 0.08, y: 0.3765 },
+    { id: "zavijava", x: 0.1025, y: 0.4652 },
+    { id: "zaniah", x: 0.2385, y: 0.5105 },
+    { id: "porrima", x: 0.3398, y: 0.5251 },
+    { id: "apami-atsa", x: 0.4716, y: 0.6013 },
+    { id: "spica", x: 0.5426, y: 0.706 },
+    { id: "syrma", x: 0.7792, y: 0.6099 },
+    { id: "rijl-al-awwa", x: 0.9052, y: 0.6035 },
+    { id: "vindemiatrix", x: 0.4354, y: 0.294 },
+    { id: "minelauva", x: 0.4048, y: 0.4348 },
+    { id: "heze", x: 0.5868, y: 0.5092 },
+    { id: "tau", x: 0.7123, y: 0.4693 },
+    { id: "one-hundred-nine", x: 0.92, y: 0.4629 },
+  ],
+  lines: [
+    ["nu", "zavijava"],
+    ["zavijava", "zaniah"],
+    ["zaniah", "porrima"],
+    ["porrima", "apami-atsa"],
+    ["apami-atsa", "spica"],
+    ["spica", "syrma"],
+    ["syrma", "rijl-al-awwa"],
+    ["vindemiatrix", "minelauva"],
+    ["minelauva", "porrima"],
+    ["apami-atsa", "heze"],
+    ["heze", "tau"],
+    ["tau", "one-hundred-nine"],
+  ],
+};

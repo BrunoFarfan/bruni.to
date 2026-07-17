@@ -1,0 +1,14 @@
+---
+import ConvergenceGame from "../features/convergence/ConvergenceGame";
+import Layout from "../layouts/Layout.astro";
+---
+
+<Layout
+    title="Convergence | Bruno Farfán"
+    description="A short strategy experiment built from the particles of bruni.to."
+    favicon="/images/convergence-logo.svg?v=2"
+    immersive
+    showThemeToggle
+>
+    <ConvergenceGame client:only="react" />
+</Layout>

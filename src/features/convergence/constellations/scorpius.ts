@@ -1,0 +1,37 @@
+import type { ConstellationDefinition } from "./types";
+
+export const SCORPIUS: ConstellationDefinition = {
+  id: "scorpius",
+  name: "Scorpius",
+  stars: [
+    { id: "fang", x: 0.0927, y: 0.3061 },
+    { id: "dschubba", x: 0.1038, y: 0.1809 },
+    { id: "acrab", x: 0.1421, y: 0.08 },
+    { id: "alniyat", x: 0.2601, y: 0.2875 },
+    { id: "antares", x: 0.3216, y: 0.3175 },
+    { id: "paikauhale", x: 0.3701, y: 0.3815 },
+    { id: "larawag", x: 0.4771, y: 0.5993 },
+    { id: "xamidimura", x: 0.4899, y: 0.7339 },
+    { id: "grafias", x: 0.5102, y: 0.8885 },
+    { id: "eta", x: 0.6418, y: 0.92 },
+    { id: "sargas", x: 0.8304, y: 0.9113 },
+    { id: "girtab", x: 0.9073, y: 0.8084 },
+    { id: "mula", x: 0.8691, y: 0.7691 },
+    { id: "shaula", x: 0.8026, y: 0.7001 },
+  ],
+  lines: [
+    ["fang", "dschubba"],
+    ["dschubba", "acrab"],
+    ["dschubba", "alniyat"],
+    ["alniyat", "antares"],
+    ["antares", "paikauhale"],
+    ["paikauhale", "larawag"],
+    ["larawag", "xamidimura"],
+    ["xamidimura", "grafias"],
+    ["grafias", "eta"],
+    ["eta", "sargas"],
+    ["sargas", "girtab"],
+    ["girtab", "mula"],
+    ["mula", "shaula"],
+  ],
+};

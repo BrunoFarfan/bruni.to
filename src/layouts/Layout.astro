@@ -7,10 +7,25 @@ interface Props {
     title: string;
     description: string;
     canonicalPath?: string;
+    favicon?: string;
+    immersive?: boolean;
+    showThemeToggle?: boolean;
 }
 
-const { title, description, canonicalPath = Astro.url.pathname } = Astro.props;
+const {
+    title,
+    description,
+    canonicalPath = Astro.url.pathname,
+    favicon,
+    immersive = false,
+} = Astro.props;
+const showThemeToggle = Astro.props.showThemeToggle ?? !immersive;
 const pageTitle = title;
+const faviconType = favicon?.includes(".svg")
+    ? "image/svg+xml"
+    : favicon?.includes(".gif")
+      ? "image/gif"
+      : "image/png";
 const siteUrl = Astro.site ?? new URL("https://www.bruni.to");
 const canonicalUrl = new URL(canonicalPath, siteUrl).toString();
 const ogImageUrl = new URL("/og-image.png", siteUrl).toString();
@@ -33,9 +48,23 @@ const personJsonLd = {
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" type="image/png" href="/favicon.png?v=2" />
-        <link rel="shortcut icon" href="/favicon.ico?v=2" sizes="32x32" />
-        <link rel="apple-touch-icon" href="/favicon.png?v=2" />
+        <link
+            rel="icon"
+            type={faviconType}
+            href={favicon ?? "/favicon.png?v=2"}
+        />
+        {
+            !favicon && (
+                <>
+                    <link
+                        rel="shortcut icon"
+                        href="/favicon.ico?v=2"
+                        sizes="32x32"
+                    />
+                    <link rel="apple-touch-icon" href="/favicon.png?v=2" />
+                </>
+            )
+        }
         <meta name="generator" content={Astro.generator} />
         <title>{pageTitle}</title>
         <meta name="description" content={description} />
@@ -74,14 +103,14 @@ const personJsonLd = {
             }
         </script>
     </head>
-    <body>
+    <body class:list={{ "is-immersive": immersive }}>
         <a class="skip-link" href="#main">Skip to content</a>
-        <ParticleThemeToggle client:load />
+        {showThemeToggle && <ParticleThemeToggle client:load />}
         <div class="site-shell">
             <main id="main" class="site-main">
                 <slot />
             </main>
-            <Footer />
+            {!immersive && <Footer />}
         </div>
     </body>
 </html>

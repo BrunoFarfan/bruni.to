@@ -124,6 +124,16 @@ button {
   flex: 1;
 }
 
+body.is-immersive {
+  overflow: hidden;
+  background: var(--color-bg);
+}
+
+body.is-immersive .site-shell,
+body.is-immersive .site-main {
+  min-height: 100svh;
+}
+
 .container {
   width: min(100% - (var(--space-page) * 2), var(--container));
   margin-inline: auto;
