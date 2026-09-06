@@ -172,12 +172,13 @@ Boards are assembled from recognizable representations of:
 - Pisces
 - Ophiuchus
 
-Each constellation may appear at most once on a board. Its recognizable shape
-and conventional internal connections should be preserved, although the whole
-shape may be rotated, scaled, and positioned to produce a balanced composition.
-Every figure is stored independently in normalized unit-square coordinates,
-with its celestial aspect ratio preserved so board placement can transform it
-without rebuilding or distorting its defining geometry.
+Each constellation may appear at most once on a board. Its playable definition
+is capped at 15 stars. Dense figures may omit intermediate stars and collapse
+the corresponding line segments, provided the recognizable silhouette and
+principal conventional connections survive. The whole shape may be rotated,
+scaled, and positioned to produce a balanced composition. Every figure is
+stored independently in normalized unit-square coordinates so board placement
+can transform it without rebuilding its defining geometry.
 
 Constellations are visual and spatial groupings, not permanent faction
 territories. Thin, straight, faint lines connect stars inside each
@@ -208,6 +209,10 @@ and defend than widely dispersed ones.
 An initial density target is approximately 24 to 36 stars across a three-signal
 board, with roughly 30 as the center. This is a starting point for readability
 testing rather than a permanent rule.
+
+The first playable board uses simplified Leo, Aquarius, and Sagittarius
+figures with 9, 10, and 11 stars respectively. Their larger placements test the
+30-star target without reintroducing dense local clusters.
 
 ## Computer-controlled signals
 

@@ -58,27 +58,27 @@
 }
 
 .convergence__star--human img {
-  filter: brightness(0) saturate(100%) invert(51%) sepia(81%) saturate(2845%)
-    hue-rotate(216deg) brightness(105%) contrast(101%)
-    drop-shadow(0 0 0.3rem rgba(127, 121, 255, 0.82));
+  filter: grayscale(1) sepia(0.82) saturate(3.5) hue-rotate(194deg)
+    brightness(0.98) contrast(0.94)
+    drop-shadow(0 0 0.28rem rgba(127, 121, 255, 0.62));
 }
 
 .convergence__star--amber img {
-  filter: brightness(0) saturate(100%) invert(78%) sepia(68%) saturate(1288%)
-    hue-rotate(328deg) brightness(101%) contrast(90%)
-    drop-shadow(0 0 0.3rem rgba(242, 173, 85, 0.82));
+  filter: grayscale(1) sepia(0.88) saturate(3.1) hue-rotate(346deg)
+    brightness(0.98) contrast(0.92)
+    drop-shadow(0 0 0.28rem rgba(242, 173, 85, 0.62));
 }
 
 .convergence__star--teal img {
-  filter: brightness(0) saturate(100%) invert(79%) sepia(33%) saturate(809%)
-    hue-rotate(127deg) brightness(95%) contrast(92%)
-    drop-shadow(0 0 0.3rem rgba(98, 215, 209, 0.82));
+  filter: grayscale(1) sepia(0.76) saturate(2.85) hue-rotate(126deg)
+    brightness(0.95) contrast(0.92)
+    drop-shadow(0 0 0.28rem rgba(98, 215, 209, 0.62));
 }
 
 .convergence__star--neutral img {
-  filter: grayscale(1) brightness(0.82) contrast(1.1)
-    drop-shadow(0 0 0.12rem rgba(69, 63, 57, 0.32));
-  opacity: 0.72;
+  filter: grayscale(1) brightness(0.64) contrast(0.76)
+    drop-shadow(0 0 0.1rem rgba(69, 63, 57, 0.2));
+  opacity: 0.48;
 }
 
 .convergence__star-strength {

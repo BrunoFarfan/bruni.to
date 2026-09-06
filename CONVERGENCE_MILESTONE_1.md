@@ -118,6 +118,8 @@ src/
   handling, pointer gesture, tutorial state, and overlays.
 - `constellations/` contains all 13 independently normalized constellation
   definitions, their shared type, source notes, and retained dataset license.
+  Dense definitions may be simplified to a recognizable gameplay skeleton of
+  at most 15 stars.
 - `game.ts` contains board creation and all match rules.
 - `opponent.ts` chooses an action but cannot apply rules independently.
 - `draw.ts` renders the infrequently changing board and temporary interaction
@@ -177,6 +179,8 @@ orientation while traveling.
   - multi-source crossing and target convergence are functional;
   - portrait layout and touch-sized hit areas are present at a 390 × 844
     viewport.
+- The current three-constellation board uses larger placements and 30 total
+  stars: 9 in Leo, 10 in Aquarius, and 11 in Sagittarius.
 - An OS-level screenshot of the Brave window was also inspected to confirm the
   actual headed-browser presentation.
 

@@ -339,7 +339,7 @@ function drawTargetRing(
   viewScale: number,
   palette: BoardPalette,
 ) {
-  const starSize = Math.max(46, Math.min(62, 52 * viewScale));
+  const starSize = Math.max(34, Math.min(54, 46 * viewScale));
   const nodeRadius = starSize / 2 / viewScale;
 
   for (const star of game.stars) {

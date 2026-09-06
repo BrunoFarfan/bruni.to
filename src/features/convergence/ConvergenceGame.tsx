@@ -288,7 +288,7 @@ export default function ConvergenceGame() {
         game.boardWidth,
         game.boardHeight,
       );
-      const size = Math.max(46, Math.min(62, 52 * view.scale));
+      const size = Math.max(34, Math.min(54, 46 * view.scale));
 
       setStarViews(
         game.stars.map((star) => ({
@@ -619,7 +619,7 @@ export default function ConvergenceGame() {
               style={style}
             >
               <img
-                src="/images/convergence-star.gif"
+                src="/images/convergence-star.webp?v=2"
                 alt=""
                 decoding="async"
                 draggable="false"
