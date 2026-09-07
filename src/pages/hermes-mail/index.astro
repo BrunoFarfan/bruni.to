@@ -1,0 +1,87 @@
+---
+import Layout from "../../layouts/Layout.astro";
+---
+
+<Layout
+    title="Hermes Mail | Personal email automation"
+    description="Hermes Mail is Bruno Farfán Miquel's private, approval-gated email assistant."
+    canonicalPath="/hermes-mail/"
+>
+    <article class="policy-page">
+        <div class="container policy-page__inner">
+            <nav class="policy-page__nav" aria-label="Breadcrumb">
+                <a href="/">bruni.to</a>
+                <span aria-hidden="true">/</span>
+                <span>Hermes Mail</span>
+            </nav>
+
+            <header class="policy-hero">
+                <p class="eyebrow">Private utility</p>
+                <h1>Hermes Mail</h1>
+                <p class="policy-hero__lead">
+                    A personal email assistant built for deliberate automation:
+                    useful access when requested, explicit approval before an
+                    action changes a mailbox or sends a message.
+                </p>
+            </header>
+
+            <div class="policy-grid" aria-label="Hermes Mail overview">
+                <section class="policy-card">
+                    <p class="policy-card__index" aria-hidden="true">01</p>
+                    <h2>What it does</h2>
+                    <p>
+                        Hermes Mail can search and read connected Gmail
+                        accounts, download an attachment when requested, prepare
+                        messages, change labels, and move messages to Trash.
+                    </p>
+                </section>
+
+                <section class="policy-card">
+                    <p class="policy-card__index" aria-hidden="true">02</p>
+                    <h2>How actions are controlled</h2>
+                    <p>
+                        Sending email and changing mailbox state require a
+                        separate, short-lived owner approval. Approved actions
+                        are bound to the exact message or operation and execute
+                        at most once.
+                    </p>
+                </section>
+
+                <section class="policy-card">
+                    <p class="policy-card__index" aria-hidden="true">03</p>
+                    <h2>Who it is for</h2>
+                    <p>
+                        This is a private application operated by Bruno Farfán
+                        Miquel for personally controlled or explicitly
+                        authorized accounts. It has no public signup or
+                        commercial user service.
+                    </p>
+                </section>
+            </div>
+
+            <section class="policy-callout" aria-labelledby="data-title">
+                <div>
+                    <p class="eyebrow">Data &amp; privacy</p>
+                    <h2 id="data-title">Narrow access, clearly described.</h2>
+                </div>
+                <div class="policy-callout__body">
+                    <p>
+                        OAuth credentials are kept outside the assistant's
+                        direct access. Email content is handled only to perform
+                        owner-requested tasks and is never sold or used for
+                        advertising.
+                    </p>
+                    <a class="policy-link" href="/hermes-mail/privacy/">
+                        <span>Read the privacy policy</span>
+                        <span aria-hidden="true">↗</span>
+                    </a>
+                </div>
+            </section>
+
+            <p class="policy-contact">
+                Questions about Hermes Mail?
+                <a href="mailto:info@bruni.to">info@bruni.to</a>
+            </p>
+        </div>
+    </article>
+</Layout>

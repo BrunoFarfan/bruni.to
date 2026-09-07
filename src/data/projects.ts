@@ -46,6 +46,22 @@ export const workProjects: Project[] = [
 
 export const labProjects: Project[] = [
   {
+    title: "Songuess",
+    externalUrl: "https://songuess.bruni.to",
+    externalLabel: "Play Songuess in a new tab",
+    summary:
+      "A six-clue music guessing game built with Astro and Python around progressively longer song previews.",
+    detailHeading: "Experiment",
+    details: [
+      "Each round begins with a one-second glimpse of a song. A wrong guess or skip reveals a little more, turning familiar music into a six-step test of memory and instinct.",
+      "Players can jump into a broad mix or shape each session around the music they want to explore.",
+      "Each round selects a song from a prebuilt catalog, applies the player's filters, and plays its preview link in six progressively longer segments.",
+      "A growing catalog keeps the experience varied while recent rounds and personal statistics make it easy to follow progress over time.",
+    ],
+    tags: ["Astro", "Python", "Music discovery"],
+    status: "Live experiment",
+  },
+  {
     title: "MIKE",
     externalUrl: "https://github.com/brunofarfan/tabletennis",
     externalLabel: "Open MIKE on GitHub in a new tab",

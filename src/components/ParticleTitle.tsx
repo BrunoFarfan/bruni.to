@@ -153,6 +153,7 @@ export default function ParticleTitle({
     let heroMorphTimer = 0;
     let pageRevealTimer = 0;
     let interactionHintTimer = 0;
+    let themeColorTransitionUntil = 0;
     let morphStepTimers: number[] = [];
     let settledFrames = 0;
     let hasStartedIntroAnimation = false;
@@ -841,10 +842,17 @@ export default function ParticleTitle({
       return rgb;
     }
 
-    function handleThemeChange() {
+    function handleThemeChange(event: Event) {
+      const duration =
+        (event as CustomEvent<{ duration?: number }>).detail?.duration ?? 0;
+
+      themeColorTransitionUntil = window.performance.now() + duration;
       colorCache.clear();
       if (particles.length > 0) {
         draw();
+      }
+      if (duration > 0) {
+        scheduleTick();
       }
     }
 
@@ -938,7 +946,7 @@ export default function ParticleTitle({
       const scroll = getScrollOffset();
       const radius = width < 520 ? 1.35 : 1.65;
 
-      particleRenderer.draw(particles, {
+      const options = {
         scrollX: scroll.x,
         scrollY: scroll.y,
         baseRadius: radius,
@@ -946,7 +954,11 @@ export default function ParticleTitle({
         accent: parseColor(readThemeColor("--color-accent-strong", "#343aa5")),
         gradientStart: { x: width * 0.16, y: height * 0.28 },
         gradientEnd: { x: width * 0.84, y: height * 0.76 },
-      });
+      };
+      particleRenderer.draw(particles, options);
+      window.dispatchEvent(
+        new CustomEvent("particle-frame", { detail: { particles, options } }),
+      );
     }
 
     function scheduleTick() {
@@ -1106,8 +1118,11 @@ export default function ParticleTitle({
       const needsPointerReturn =
         state === "domain-settled" && (hasPointerMotion || settledRatio < 1);
       const needsInteractionHint = interactionHint.active;
+      const needsThemeColorTransition =
+        window.performance.now() < themeColorTransitionUntil;
 
       if (
+        needsThemeColorTransition ||
         needsPointerReturn ||
         (state !== "domain-settled" &&
           (needsStateTransition ||

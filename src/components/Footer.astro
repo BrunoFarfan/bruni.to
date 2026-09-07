@@ -34,16 +34,8 @@ const links = [
                     <a
                         class="external-text-link"
                         href={link.href}
-                        target={
-                            link.href.startsWith("mailto:")
-                                ? undefined
-                                : "_blank"
-                        }
-                        rel={
-                            link.href.startsWith("mailto:")
-                                ? undefined
-                                : "noopener noreferrer"
-                        }
+                        target={link.href.startsWith("http") ? "_blank" : undefined}
+                        rel={link.href.startsWith("http") ? "noopener noreferrer" : undefined}
                         aria-label={link.ariaLabel}
                     >
                         <span>{link.label}</span>
