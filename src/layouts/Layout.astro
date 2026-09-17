@@ -13,7 +13,7 @@ const { title, description, canonicalPath = Astro.url.pathname } = Astro.props;
 const pageTitle = title;
 const siteUrl = Astro.site ?? new URL("https://www.bruni.to");
 const canonicalUrl = new URL(canonicalPath, siteUrl).toString();
-const ogImageUrl = new URL("/og-image.png", siteUrl).toString();
+const ogImageUrl = new URL("/og-image.png?v=2", siteUrl).toString();
 const facebookAppId = import.meta.env.PUBLIC_FACEBOOK_APP_ID;
 const personJsonLd = {
     "@context": "https://schema.org",
