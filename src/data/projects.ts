@@ -46,12 +46,28 @@ export const workProjects: Project[] = [
 
 export const labProjects: Project[] = [
   {
+    title: "Mass Effect",
+    externalUrl: "https://masseffect.bruni.to",
+    externalLabel: "Explore Mass Effect in a new tab",
+    summary:
+      "A three-dimensional orbital sandbox for exploring gravity, planetary systems, and collisions directly in the browser.",
+    detailHeading: "Simulation",
+    details: [
+      "Explore the Solar System in three dimensions, move between planets and moons, and follow rotating surfaces from a ground-level perspective.",
+      "Add bodies or choose scenarios to explore binary stars, unstable orbits, and planetary impacts under Newtonian gravity.",
+      "Pause, speed up time, or rewind recorded history to revisit how a system evolves and try a different starting point.",
+      "Built with JavaScript and Canvas, with no runtime dependencies and numerical tests for orbital stability, momentum, and collisions.",
+    ],
+    tags: ["JavaScript", "Canvas", "Orbital physics"],
+    status: "Simulation",
+  },
+  {
     title: "Songuess",
     externalUrl: "https://songuess.bruni.to",
     externalLabel: "Play Songuess in a new tab",
     summary:
       "A six-clue music guessing game built with Astro and Python around progressively longer song previews.",
-    detailHeading: "Experiment",
+    detailHeading: "Game",
     details: [
       "Each round begins with a one-second glimpse of a song. A wrong guess or skip reveals a little more, turning familiar music into a six-step test of memory and instinct.",
       "Players can jump into a broad mix or shape each session around the music they want to explore.",
@@ -59,7 +75,7 @@ export const labProjects: Project[] = [
       "A growing catalog keeps the experience varied while recent rounds and personal statistics make it easy to follow progress over time.",
     ],
     tags: ["Astro", "Python", "Music discovery"],
-    status: "Live experiment",
+    status: "Game",
   },
   {
     title: "MIKE",
